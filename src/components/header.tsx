@@ -1,20 +1,11 @@
 'use client'
-import { Loader2, LogOut, Menu, User, X } from 'lucide-react'
+import { Loader2, Menu, User, X } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import React from 'react'
 import { Logo } from '@/components/logo'
 import { Button, buttonVariants } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { UserButton } from '@/components/user-button'
 import { authClient } from '@/lib/auth-client'
 import { cn } from '@/lib/utils'
 
@@ -25,10 +16,42 @@ const menuItems = [
   { name: 'About', href: '#link' },
 ]
 
+const UserButtonContent = ({
+  session,
+  isIconOnly,
+}: {
+  session: any
+  isIconOnly: boolean
+}) => {
+  const avatarIcon = session?.user?.image ? (
+    <img
+      alt={session.user.name || 'User'}
+      className="size-6 rounded-full"
+      height={24}
+      src={session.user.image}
+      width={24}
+    />
+  ) : (
+    <User className="size-5" />
+  )
+
+  if (isIconOnly) {
+    return avatarIcon
+  }
+
+  return (
+    <>
+      {avatarIcon}
+      <span className="max-w-[100px] truncate">
+        {session?.user?.name || session?.user?.email}
+      </span>
+    </>
+  )
+}
+
 export const HeroHeader = () => {
   const [menuState, setMenuState] = React.useState(false)
   const [isScrolled, setIsScrolled] = React.useState(false)
-  const router = useRouter()
   const t = useTranslations('header')
   const { data: session, isPending } = authClient.useSession()
 
@@ -40,90 +63,44 @@ export const HeroHeader = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const handleSignOut = async () => {
-    await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.refresh()
-        },
-      },
-    })
-  }
-
   const renderUserButton = () => {
-    if (!session?.user) {
-      return null
-    }
-
-    const menuContent = (
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>
-            <div className="flex flex-col space-y-1">
-              <p className="font-medium text-sm">
-                {session.user.name || 'User'}
-              </p>
-              <p className="text-muted-foreground text-xs">
-                {session.user.email}
-              </p>
-            </div>
-          </DropdownMenuLabel>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem onClick={handleSignOut} variant="destructive">
-            <LogOut className="mr-2 size-4" />
-            <span>{t('signOut')}</span>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    )
-
-    const avatarIcon = session.user.image ? (
-      <img
-        alt={session.user.name || 'User'}
-        className="size-6 rounded-full"
-        height={24}
-        src={session.user.image}
-        width={24}
-      />
-    ) : (
-      <User className="size-5" />
-    )
-
     return (
-      <>
-        {/* 未滚动时显示完整按钮，滚动时在小屏幕显示 */}
-        <DropdownMenu>
-          <DropdownMenuTrigger
+      <UserButton
+        trigger={
+          <button
             className={cn(
               buttonVariants({ variant: 'outline', size: 'default' }),
               isScrolled ? 'lg:hidden' : 'lg:inline-flex',
               'gap-2'
             )}
+            type="button"
           >
-            {avatarIcon}
-            <span className="max-w-[100px] truncate">
-              {session.user.name || session.user.email}
-            </span>
-          </DropdownMenuTrigger>
-          {menuContent}
-        </DropdownMenu>
-        {/* 滚动时在大屏幕显示仅头像按钮 */}
-        {isScrolled && (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className={cn(
-                buttonVariants({ variant: 'outline', size: 'default' }),
-                'hidden lg:inline-flex'
-              )}
-            >
-              {avatarIcon}
-            </DropdownMenuTrigger>
-            {menuContent}
-          </DropdownMenu>
-        )}
-      </>
+            <UserButtonContent isIconOnly={false} session={session} />
+          </button>
+        }
+      />
+    )
+  }
+
+  const renderScrolledUserButton = () => {
+    if (!isScrolled) {
+      return null
+    }
+    return (
+      <UserButton
+        className="hidden lg:inline-flex"
+        trigger={
+          <button
+            className={cn(
+              buttonVariants({ variant: 'outline', size: 'default' }),
+              'hidden lg:inline-flex'
+            )}
+            type="button"
+          >
+            <UserButtonContent isIconOnly={true} session={session} />
+          </button>
+        }
+      />
     )
   }
 
@@ -143,7 +120,12 @@ export const HeroHeader = () => {
     }
 
     if (session?.user) {
-      return renderUserButton()
+      return (
+        <>
+          {renderUserButton()}
+          {renderScrolledUserButton()}
+        </>
+      )
     }
 
     return (
@@ -176,6 +158,7 @@ export const HeroHeader = () => {
       </>
     )
   }
+
   return (
     <header>
       <nav
