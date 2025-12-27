@@ -3,5 +3,12 @@
     "title": "登录",
     "description": "使用您的 Google 账号登录",
     "googleSignIn": "使用 Google 登录"
+  },
+  "header": {
+    "login": "登录",
+    "signUp": "注册",
+    "getStarted": "开始使用",
+    "signOut": "退出登录",
+    "loading": "加载中..."
   }
 }

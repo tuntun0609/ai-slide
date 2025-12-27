@@ -3,5 +3,12 @@
     "title": "Sign In",
     "description": "Sign in with your Google account",
     "googleSignIn": "Sign in with Google"
+  },
+  "header": {
+    "login": "Login",
+    "signUp": "Sign Up",
+    "getStarted": "Get Started",
+    "signOut": "Sign Out",
+    "loading": "Loading..."
   }
 }

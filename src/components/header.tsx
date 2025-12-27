@@ -1,9 +1,21 @@
 'use client'
-import { Menu, X } from 'lucide-react'
+import { Loader2, LogOut, Menu, User, X } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import React from 'react'
 import { Logo } from '@/components/logo'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { authClient } from '@/lib/auth-client'
 import { cn } from '@/lib/utils'
 
 const menuItems = [
@@ -16,6 +28,9 @@ const menuItems = [
 export const HeroHeader = () => {
   const [menuState, setMenuState] = React.useState(false)
   const [isScrolled, setIsScrolled] = React.useState(false)
+  const router = useRouter()
+  const t = useTranslations('header')
+  const { data: session, isPending } = authClient.useSession()
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -24,6 +39,143 @@ export const HeroHeader = () => {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  const handleSignOut = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.refresh()
+        },
+      },
+    })
+  }
+
+  const renderUserButton = () => {
+    if (!session?.user) {
+      return null
+    }
+
+    const menuContent = (
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>
+            <div className="flex flex-col space-y-1">
+              <p className="font-medium text-sm">
+                {session.user.name || 'User'}
+              </p>
+              <p className="text-muted-foreground text-xs">
+                {session.user.email}
+              </p>
+            </div>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={handleSignOut} variant="destructive">
+            <LogOut className="mr-2 size-4" />
+            <span>{t('signOut')}</span>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    )
+
+    const avatarIcon = session.user.image ? (
+      <img
+        alt={session.user.name || 'User'}
+        className="size-6 rounded-full"
+        height={24}
+        src={session.user.image}
+        width={24}
+      />
+    ) : (
+      <User className="size-5" />
+    )
+
+    return (
+      <>
+        {/* 未滚动时显示完整按钮，滚动时在小屏幕显示 */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className={cn(
+              buttonVariants({ variant: 'outline', size: 'default' }),
+              isScrolled ? 'lg:hidden' : 'lg:inline-flex',
+              'gap-2'
+            )}
+          >
+            {avatarIcon}
+            <span className="max-w-[100px] truncate">
+              {session.user.name || session.user.email}
+            </span>
+          </DropdownMenuTrigger>
+          {menuContent}
+        </DropdownMenu>
+        {/* 滚动时在大屏幕显示仅头像按钮 */}
+        {isScrolled && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={cn(
+                buttonVariants({ variant: 'outline', size: 'default' }),
+                'hidden lg:inline-flex'
+              )}
+            >
+              {avatarIcon}
+            </DropdownMenuTrigger>
+            {menuContent}
+          </DropdownMenu>
+        )}
+      </>
+    )
+  }
+
+  const renderAuthButtons = () => {
+    if (isPending) {
+      return (
+        <Button
+          className={cn(isScrolled && 'lg:hidden')}
+          disabled
+          size="sm"
+          variant="outline"
+        >
+          <Loader2 className="mr-2 size-4 animate-spin" />
+          <span>{t('loading')}</span>
+        </Button>
+      )
+    }
+
+    if (session?.user) {
+      return renderUserButton()
+    }
+
+    return (
+      <>
+        <Button
+          className={cn(isScrolled && 'lg:hidden')}
+          nativeButton={false}
+          render={<Link href="/login" />}
+          size="sm"
+          variant="outline"
+        >
+          <span>{t('login')}</span>
+        </Button>
+        <Button
+          className={cn(isScrolled && 'lg:hidden')}
+          nativeButton={false}
+          render={<Link href="/login" />}
+          size="sm"
+        >
+          <span>{t('signUp')}</span>
+        </Button>
+        <Button
+          className={cn(isScrolled ? 'lg:inline-flex' : 'hidden')}
+          nativeButton={false}
+          render={<Link href="/login" />}
+          size="sm"
+        >
+          <span>{t('getStarted')}</span>
+        </Button>
+      </>
+    )
+  }
   return (
     <header>
       <nav
@@ -89,31 +241,7 @@ export const HeroHeader = () => {
                 </ul>
               </div>
               <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
-                <Button
-                  className={cn(isScrolled && 'lg:hidden')}
-                  nativeButton={false}
-                  render={<Link href="#" />}
-                  size="sm"
-                  variant="outline"
-                >
-                  <span>Login</span>
-                </Button>
-                <Button
-                  className={cn(isScrolled && 'lg:hidden')}
-                  nativeButton={false}
-                  render={<Link href="#" />}
-                  size="sm"
-                >
-                  <span>Sign Up</span>
-                </Button>
-                <Button
-                  className={cn(isScrolled ? 'lg:inline-flex' : 'hidden')}
-                  nativeButton={false}
-                  render={<Link href="#" />}
-                  size="sm"
-                >
-                  <span>Get Started</span>
-                </Button>
+                {renderAuthButtons()}
               </div>
             </div>
           </div>
