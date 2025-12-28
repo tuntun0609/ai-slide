@@ -1,5 +1,12 @@
 import { relations } from 'drizzle-orm'
-import { boolean, index, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import {
+  boolean,
+  index,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+} from 'drizzle-orm/pg-core'
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -78,9 +85,61 @@ export const verification = pgTable(
   (table) => [index('verification_identifier_idx').on(table.identifier)]
 )
 
+export const chat = pgTable(
+  'chat',
+  {
+    id: text('id').primaryKey(),
+    title: text('title').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at')
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [index('chat_userId_idx').on(table.userId)]
+)
+
+export const message = pgTable(
+  'message',
+  {
+    id: text('id').primaryKey(),
+    chatId: text('chat_id')
+      .notNull()
+      .references(() => chat.id, { onDelete: 'cascade' }),
+    role: text('role').notNull(),
+    content: text('content').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => [index('message_chatId_idx').on(table.chatId)]
+)
+
+export const slide = pgTable(
+  'slide',
+  {
+    id: text('id').primaryKey(),
+    chatId: text('chat_id')
+      .notNull()
+      .references(() => chat.id, { onDelete: 'cascade' }),
+    title: text('title'),
+    template: text('template'),
+    theme: text('theme'),
+    content: jsonb('content').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at')
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [index('slide_chatId_idx').on(table.chatId)]
+)
+
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
+  chats: many(chat),
 }))
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -94,5 +153,28 @@ export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, {
     fields: [account.userId],
     references: [user.id],
+  }),
+}))
+
+export const chatRelations = relations(chat, ({ one, many }) => ({
+  user: one(user, {
+    fields: [chat.userId],
+    references: [user.id],
+  }),
+  messages: many(message),
+  slides: many(slide),
+}))
+
+export const messageRelations = relations(message, ({ one }) => ({
+  chat: one(chat, {
+    fields: [message.chatId],
+    references: [chat.id],
+  }),
+}))
+
+export const slideRelations = relations(slide, ({ one }) => ({
+  chat: one(chat, {
+    fields: [slide.chatId],
+    references: [chat.id],
   }),
 }))

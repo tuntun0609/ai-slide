@@ -9,10 +9,29 @@ import {
   Settings2,
   Upload,
 } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { useRouter } from '@/i18n/navigation'
 
 export function LandingChatInterface() {
+  const [input, setInput] = useState('')
+  const router = useRouter()
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (!input.trim()) {
+      return
+    }
+
+    const chatId = crypto.randomUUID()
+    // We redirect to the chat page with the first message as a query param or similar
+    // For now, let's just redirect. The chat page will need to handle the initial message if we want to pass it.
+    // Alternatively, we can save the first message here if we had an API for it.
+    // For simplicity, let's just redirect and let the user type again, or use a clever way to pass the message.
+    router.push(`/chat/${chatId}`)
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col items-center justify-center px-4 py-20">
       <h1 className="mb-10 font-semibold text-4xl text-foreground tracking-tight">
@@ -20,16 +39,28 @@ export function LandingChatInterface() {
       </h1>
 
       <div className="relative w-full">
-        <div className="relative flex w-full flex-col rounded-2xl border bg-background shadow-sm transition-all focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20">
+        <form
+          className="relative flex w-full flex-col rounded-2xl border bg-background shadow-sm transition-all focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20"
+          onSubmit={handleSubmit}
+        >
           <Textarea
             className="min-h-[140px] w-full resize-none border-0 bg-transparent p-4 pb-14 text-lg shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0"
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                handleSubmit()
+              }
+            }}
             placeholder="Ask AI to build..."
+            value={input}
           />
 
           <div className="absolute bottom-3 left-3 flex items-center gap-2">
             <Button
               className="h-8 w-8 rounded-lg hover:bg-muted"
               size="icon"
+              type="button"
               variant="ghost"
             >
               <Plus className="h-5 w-5 text-muted-foreground" />
@@ -37,6 +68,7 @@ export function LandingChatInterface() {
             <Button
               className="h-8 w-8 rounded-lg hover:bg-muted"
               size="icon"
+              type="button"
               variant="ghost"
             >
               <Settings2 className="h-5 w-5 text-muted-foreground" />
@@ -56,6 +88,7 @@ export function LandingChatInterface() {
                 width="10"
                 xmlns="http://www.w3.org/2000/svg"
               >
+                <title>Chevron Down</title>
                 <path
                   d="M1 1L5 5L9 1"
                   stroke="currentColor"
@@ -70,13 +103,16 @@ export function LandingChatInterface() {
           <div className="absolute right-3 bottom-3">
             <Button
               className="h-9 w-9 rounded-xl bg-foreground text-background shadow-sm hover:bg-foreground/90"
+              disabled={!input.trim()}
               size="icon"
+              type="submit"
             >
               <ArrowUp className="h-5 w-5" />
             </Button>
           </div>
-        </div>
+        </form>
       </div>
+      {/* ... rest of the component ... */}
 
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
         <Button

@@ -18,10 +18,18 @@ const ResizablePanels = dynamic(
   }
 )
 
-export default function ChatIdPage() {
+import { use } from 'react'
+
+export default function ChatIdPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = use(params)
+
   return (
     <main className="flex flex-1 flex-col overflow-hidden p-4 pt-0">
-      <ResizablePanels />
+      <ResizablePanels chatId={id} />
     </main>
   )
 }
