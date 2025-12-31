@@ -1,25 +1,30 @@
 import { z } from 'zod'
 
-/**
- * Main Slide Content Schema containing multiple AntV Infographic instances
- */
-export const SlideContentSchema = z.object({
-  title: z.string().describe('The main title of the slide'),
-  infographics: z
-    .array(
-      z.object({
-        title: z
-          .string()
-          .optional()
-          .describe('Title of this specific infographic'),
-        syntax: z
-          .string()
-          .describe(
-            'The AntV Infographic syntax string (e.g., infographic template-name\\ndata\\n  title ...)'
-          ),
-      })
-    )
-    .describe('List of infographics to be displayed on this slide'),
+export const CreateSlideSchema = z.object({
+  title: z.string().describe('The title of the slide'),
+  content: z
+    .string()
+    .describe('The AntV Infographic syntax string for the slide content'),
+  order: z
+    .number()
+    .optional()
+    .describe('The order index of the slide (default: next available)'),
 })
 
-export type SlideContent = z.infer<typeof SlideContentSchema>
+export const UpdateSlideSchema = z.object({
+  id: z.string().describe('The ID of the slide to update'),
+  title: z.string().optional().describe('The new title of the slide'),
+  content: z
+    .string()
+    .optional()
+    .describe('The new AntV Infographic syntax string'),
+  order: z.number().optional().describe('The new order index'),
+})
+
+export const DeleteSlideSchema = z.object({
+  id: z.string().describe('The ID of the slide to delete'),
+})
+
+export type CreateSlide = z.infer<typeof CreateSlideSchema>
+export type UpdateSlide = z.infer<typeof UpdateSlideSchema>
+export type DeleteSlide = z.infer<typeof DeleteSlideSchema>

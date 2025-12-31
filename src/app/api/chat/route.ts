@@ -1,10 +1,14 @@
 import { convertToModelMessages, streamText, tool, type UIMessage } from 'ai'
-import { eq } from 'drizzle-orm'
+import { asc, desc, eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { chat, message as messageTable, slide } from '@/db/schema'
 import { defaultModel } from '@/lib/ai'
 import { getSession } from '@/lib/auth'
-import { SlideContentSchema } from '@/lib/slide-schema'
+import {
+  CreateSlideSchema,
+  DeleteSlideSchema,
+  UpdateSlideSchema,
+} from '@/lib/slide-schema'
 
 export async function POST(req: Request) {
   const { messages, id: chatId }: { messages: UIMessage[]; id: string } =
@@ -30,6 +34,19 @@ export async function POST(req: Request) {
     })
   }
 
+  // Fetch existing slides for context
+  const existingSlides = await db.query.slide.findMany({
+    where: eq(slide.chatId, chatId),
+    orderBy: [asc(slide.order)],
+    columns: { id: true, title: true, order: true },
+  })
+
+  const slidesContext = existingSlides.length
+    ? `Current slides:\n${existingSlides
+        .map((s) => `- [${s.id}] ${s.title} (Order: ${s.order})`)
+        .join('\n')}`
+    : 'No slides created yet.'
+
   // Save the latest user message
   const lastUserMessage = messages.at(-1)
   if (lastUserMessage?.role === 'user') {
@@ -47,66 +64,78 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: defaultModel,
-    system: `你是一个专业的信息图设计专家。你的任务是根据用户需求，使用 AntV Infographic 语法生成高质量的信息图。
+    system: `你是一个专业的信息图设计专家。你的任务是根据用户需求，管理一组幻灯片 (Slides)，并使用 AntV Infographic 语法为每个 slide 生成高质量的信息图。
 
     核心理念：信息图 = 信息结构 (data) + 图形表意 (design)。
     
-    语法规范：
+    语法规范 (AntV Infographic)：
     1. 入口：必须以 'infographic <template-name>' 开头。
     2. 块结构：
        - data: 核心数据。包含 title, desc 和 items 列表。
        - design: 视觉配置。可指定 structure (布局结构) 和 item (组件类型)。
        - theme: 视觉风格。支持切换主题名或配置颜色、调色盘、风格化 (如 stylize rough 手绘风)。
 
-    多图支持：
-    一个 slide 可以包含多个信息图组件。请根据用户需求，在 infographics 数组中生成一个或多个信息图。
+    幻灯片管理：
+    - 你可以创建、更新和删除幻灯片。
+    - 每个幻灯片对应一个独立的信息图。
+    - 使用 'order' 字段控制播放顺序。
 
-    示例语法（单个）：
-    infographic list-row-horizontal-icon-arrow
-    design
-      structure list-column
-        gap 20
-      item badge-card
-      title default
-        align center
-    data
-      title 增长引擎
-      desc 多渠道触达
-      items
-        - label 线索获取
-          value 18.6
-          desc 渠道投放与内容获客
-          icon company-021_v1_lineal
-          children
-            - label 社交媒体
-            - label 搜索引擎
-        - label 转化提效
-          value 12.4
-          icon antenna-bars-5_v1_lineal
-    theme
-      colorBg #f0f2f5
-      stylize rough
-        roughness 0.5
+    ${slidesContext}
 
     工具说明：
-    - generateSlide: 生成或更新 slide 页面。必须返回 infographics 数组，每个元素包含 syntax 字符串。
+    - createSlide: 创建新幻灯片。需提供 title, content (AntV 语法), 可选 order。
+    - updateSlide: 更新现有幻灯片。需提供 id, 可选 title, content, order。
+    - deleteSlide: 删除幻灯片。需提供 id。
 
     请始终确保生成的语法逻辑清晰，视觉表现力强，且符合 AntV Infographic 官方规范。`,
     messages: modelMessages,
     tools: {
-      generateSlide: tool({
-        description:
-          'Generate or update a slide with one or more infographics.',
-        inputSchema: SlideContentSchema,
-        execute: async (content) => {
+      createSlide: tool({
+        description: 'Create a new slide with an infographic.',
+        inputSchema: CreateSlideSchema,
+        execute: async (input) => {
+          let order = input.order
+          if (order === undefined) {
+            const lastSlide = await db.query.slide.findFirst({
+              where: eq(slide.chatId, chatId),
+              orderBy: [desc(slide.order)],
+            })
+            order = (lastSlide?.order ?? -1) + 1
+          }
+
           const slideId = crypto.randomUUID()
           await db.insert(slide).values({
             id: slideId,
             chatId,
-            title: content.title,
-            content: { infographics: content.infographics },
+            title: input.title,
+            content: input.content,
+            order,
           })
-          return { success: true, slideId, ...content }
+          return { success: true, slideId, ...input, order }
+        },
+      }),
+      updateSlide: tool({
+        description: 'Update an existing slide.',
+        inputSchema: UpdateSlideSchema,
+        execute: async (input) => {
+          await db
+            .update(slide)
+            .set({
+              ...(input.title ? { title: input.title } : {}),
+              ...(input.content ? { content: input.content } : {}),
+              ...(input.order !== undefined ? { order: input.order } : {}),
+              updatedAt: new Date(),
+            })
+            .where(eq(slide.id, input.id))
+          return { success: true, ...input }
+        },
+      }),
+      deleteSlide: tool({
+        description: 'Delete a slide.',
+        inputSchema: DeleteSlideSchema,
+        execute: async (input) => {
+          await db.delete(slide).where(eq(slide.id, input.id))
+          return { success: true, id: input.id }
         },
       }),
     },
@@ -116,7 +145,7 @@ export async function POST(req: Request) {
         id: crypto.randomUUID(),
         chatId,
         role: 'assistant',
-        content: text || (toolCalls?.length ? 'Updating slide...' : ''),
+        content: text || (toolCalls?.length ? 'Updating slides...' : ''),
       })
     },
   })

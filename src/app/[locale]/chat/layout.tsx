@@ -1,4 +1,5 @@
 import { Coins, Gift } from 'lucide-react'
+import { redirect } from 'next/navigation'
 import { AppSidebar } from '@/components/chat/app-sidebar'
 import { Button } from '@/components/ui/button'
 import {
@@ -7,12 +8,19 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar'
 import { UserButton } from '@/components/user-button'
+import { getSession } from '@/lib/auth'
 
-export default function CreateLayout({
+export default async function CreateLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const session = await getSession()
+
+  if (!session?.user) {
+    redirect('/login')
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar />

@@ -2,7 +2,7 @@ import { relations } from 'drizzle-orm'
 import {
   boolean,
   index,
-  jsonb,
+  integer,
   pgTable,
   text,
   timestamp,
@@ -124,9 +124,8 @@ export const slide = pgTable(
       .notNull()
       .references(() => chat.id, { onDelete: 'cascade' }),
     title: text('title'),
-    template: text('template'),
-    theme: text('theme'),
-    content: jsonb('content').notNull(),
+    order: integer('order').notNull().default(0),
+    content: text('content').notNull(), // Stores the infographic syntax string
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()

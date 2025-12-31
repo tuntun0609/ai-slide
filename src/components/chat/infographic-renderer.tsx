@@ -1,6 +1,6 @@
 'use client'
 
-import type { UIMessage, UseChatHelpers } from '@ai-sdk/react'
+import type { UIMessage } from '@ai-sdk/react'
 import {
   Infographic,
   loadSVGResource,
@@ -8,7 +8,7 @@ import {
 } from '@antv/infographic'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '../ui/button'
 
@@ -29,45 +29,6 @@ registerResourceLoader(async (config: any) => {
   }
   return null
 })
-
-function getLatestSlideData(messages: UIMessage[]) {
-  // We look for the most recent successful tool result or active tool call from generateSlide
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const m = messages[i]
-    if (!m.parts) {
-      continue
-    }
-
-    // First check for results (completed tool execution)
-    const resultPart = m.parts.find(
-      (p) =>
-        p.type === 'tool-result' &&
-        (p as any).toolName === 'generateSlide' &&
-        (p as any).result?.success
-    )
-    if (resultPart) {
-      return (resultPart as any).result as {
-        title: string
-        infographics: Array<{ title?: string; syntax: string }>
-      }
-    }
-
-    // Then check for active tool calls (for streaming syntax)
-    const callPart = m.parts.find(
-      (p) =>
-        p.type === 'tool-call' &&
-        (p as any).toolName === 'generateSlide' &&
-        (p as any).args?.infographics
-    )
-    if (callPart) {
-      return (callPart as any).args as {
-        title: string
-        infographics: Array<{ title?: string; syntax: string }>
-      }
-    }
-  }
-  return null
-}
 
 function InfographicInstance({ syntax }: { syntax: string }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -145,22 +106,55 @@ function InfographicInstance({ syntax }: { syntax: string }) {
   )
 }
 
+interface Slide {
+  id: string
+  title: string
+  content: string
+  order: number
+}
+
 export function InfographicRenderer({
+  chatId,
   chatState,
 }: {
   chatId: string
-  chatState: UseChatHelpers<UIMessage>
+  chatState: {
+    messages?: UIMessage[]
+    isLoading?: boolean
+    status?: string
+  }
 }) {
-  const { messages } = chatState
+  const isLoading = chatState.isLoading || chatState.status === 'streaming'
+  const [slides, setSlides] = useState<Slide[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [direction, setDirection] = useState(0)
 
-  // Get the latest slide data from tool results or pending tool calls
-  const slideData = useMemo(() => getLatestSlideData(messages), [messages])
+  const fetchSlides = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/chat/${chatId}/slides`)
+      if (res.ok) {
+        const data = await res.json()
+        setSlides(data)
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }, [chatId])
+
+  useEffect(() => {
+    fetchSlides()
+  }, [fetchSlides])
+
+  // Re-fetch when loading state changes (e.g. after tool execution finishes)
+  useEffect(() => {
+    if (!isLoading) {
+      fetchSlides()
+    }
+  }, [isLoading, fetchSlides])
 
   const infographics = useMemo(() => {
-    if (slideData?.infographics && slideData.infographics.length > 0) {
-      return slideData.infographics
+    if (slides.length > 0) {
+      return slides.map((s) => ({ title: s.title, syntax: s.content }))
     }
     // Default placeholder
     return [
@@ -173,27 +167,13 @@ data
     - label 步骤 1
       desc 在对话框中输入您的需求
     - label 步骤 2
-      desc AI 将为您生成一个或多个信息图
-    - label 步骤 3
-      desc 实时预览并进行调整
-`,
-      },
-      {
-        syntax: `
-infographic list-row-simple-horizontal-arrow
-data
-  title 开始创建您的信息图
-  items
-    - label 步骤12211 1
-      desc 在对话框中输入您的需求
-    - label 步骤 2
-      desc AI 将为您生成一个或多个信息图
+      desc AI 将为您生成幻灯片
     - label 步骤 3
       desc 实时预览并进行调整
 `,
       },
     ]
-  }, [slideData])
+  }, [slides])
 
   // Reset index if it becomes invalid when infographics list changes
   useEffect(() => {
