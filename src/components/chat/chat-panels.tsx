@@ -1,44 +1,32 @@
 'use client'
 
 import Cookies from 'js-cookie'
-import {
-  Group,
-  type LayoutStorage,
-  Panel,
-  Separator,
-  useDefaultLayout,
-} from 'react-resizable-panels'
+import { Group, type Layout, Panel, Separator } from 'react-resizable-panels'
+import { RESIZABLE_PANELS_COOKIE_NAME } from '@/type'
 
 interface ChatPanelsProps {
   chatId: string
+  defaultLayout?: Layout
 }
-export function ChatPanels({ chatId: _chatId }: ChatPanelsProps) {
-  const cookieStorage: LayoutStorage = {
-    getItem(key: string) {
-      return Cookies.get(key) ?? null
-    },
-    setItem(key: string, value: string) {
-      Cookies.set(key, value)
-    },
+export function ChatPanels({
+  chatId: _chatId,
+  defaultLayout,
+}: ChatPanelsProps) {
+  const onLayoutChange = (layout: Layout) => {
+    Cookies.set(RESIZABLE_PANELS_COOKIE_NAME, JSON.stringify(layout))
   }
-
-  const { defaultLayout, onLayoutChange } = useDefaultLayout({
-    id: 'chat-layout',
-    storage: cookieStorage,
-  })
 
   return (
     <main className="flex h-full p-4 pt-0">
       <Group
         className="h-full w-full"
-        // defaultLayout={defaultLayout}
+        defaultLayout={defaultLayout}
         onLayoutChange={onLayoutChange}
         orientation="horizontal"
-        suppressHydrationWarning
       >
         <Panel
           className="rounded-xl border bg-card shadow-xs"
-          defaultSize={defaultLayout?.['chat-side-panel'] ?? 30}
+          defaultSize="30"
           id="chat-side-panel"
           minSize="300px"
         >
@@ -51,7 +39,7 @@ export function ChatPanels({ chatId: _chatId }: ChatPanelsProps) {
 
         <Panel
           className="rounded-xl border bg-card shadow-xs"
-          defaultSize={defaultLayout?.['slide-render-panel'] ?? 70}
+          defaultSize="70"
           id="slide-render-panel"
           minSize="30"
         >
