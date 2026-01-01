@@ -1,4 +1,5 @@
 import { Coins, Gift } from 'lucide-react'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { AppSidebar } from '@/components/chat/app-sidebar'
 import { Button } from '@/components/ui/button'
@@ -21,8 +22,11 @@ export default async function CreateLayout({
     redirect('/login')
   }
 
+  const cookieStore = await cookies()
+  const defaultOpen = cookieStore.get('sidebar_state')?.value === 'true'
+
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center justify-between px-4">

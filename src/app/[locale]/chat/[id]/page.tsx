@@ -1,4 +1,4 @@
-'use client'
+import { ChatPanels } from '@/components/chat/chat-panels'
 
 export default async function ChatIdPage({
   params,
@@ -7,9 +7,5 @@ export default async function ChatIdPage({
 }) {
   const { id } = await params
 
-  console.log(id)
-
-  return (
-    <main className="flex flex-1 flex-col overflow-hidden p-4 pt-0">123</main>
-  )
+  return <ChatPanels chatId={id} />
 }
