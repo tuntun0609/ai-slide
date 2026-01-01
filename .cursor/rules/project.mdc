@@ -1,0 +1,11 @@
+---
+alwaysApply: true
+---
+
+这是一个 Nextjs16 的项目，使用 App Router。
+使用 shadcn/ui 作为组件库，基础组件库是 base-ui。
+使用 drizzle-orm 作为数据库。
+使用 better-auth 作为认证。
+使用 vercel 的 ai sdk 作为 Agent SDK。
+
+如果遇到不确定的库相关的问题，请使用 context7 的 mcp 来解决。
