@@ -4,27 +4,13 @@
       "command": "npx",
       "args": ["shadcn@latest", "mcp"]
     },
-    "@magicuidesign/mcp": {
-      "command": "npx",
-      "args": ["-y", "@magicuidesign/mcp@latest"]
-    },
     "context7": {
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"]
     },
-    "deepwiki": {
-      "url": "https://mcp.deepwiki.com/sse"
-    },
-    "stripe": {
-      "url": "https://mcp.stripe.com"
-    },
-    "Better Auth": {
-      "url": "https://mcp.chonkie.ai/better-auth/better-auth-builder/mcp",
-      "headers": {}
-    },
-    "chrome-devtools": {
+    "ai-elements": {
       "command": "npx",
-      "args": ["chrome-devtools-mcp@latest"]
+      "args": ["-y", "mcp-remote", "https://registry.ai-sdk.dev/api/mcp"]
     }
   }
 }

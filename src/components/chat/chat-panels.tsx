@@ -3,15 +3,14 @@
 import Cookies from 'js-cookie'
 import { Group, type Layout, Panel, Separator } from 'react-resizable-panels'
 import { RESIZABLE_PANELS_COOKIE_NAME } from '@/type'
+import { ChatPanel } from './chat-panel'
+import { RenderPanel } from './render-panel'
 
 interface ChatPanelsProps {
   chatId: string
   defaultLayout?: Layout
 }
-export function ChatPanels({
-  chatId: _chatId,
-  defaultLayout,
-}: ChatPanelsProps) {
+export function ChatPanels({ chatId, defaultLayout }: ChatPanelsProps) {
   const onLayoutChange = (layout: Layout) => {
     Cookies.set(RESIZABLE_PANELS_COOKIE_NAME, JSON.stringify(layout))
   }
@@ -30,7 +29,7 @@ export function ChatPanels({
           id="chat-side-panel"
           minSize="300px"
         >
-          <div className="h-full p-4">1{/* 左侧内容区域 */}</div>
+          <ChatPanel chatId={chatId} />
         </Panel>
 
         <Separator className="relative w-2 rounded-full bg-transparent transition-all hover:bg-primary/5 focus-visible:outline-none data-[dragging=true]:bg-primary/10">
@@ -43,7 +42,7 @@ export function ChatPanels({
           id="slide-render-panel"
           minSize="30"
         >
-          <div className="h-full p-4">2{/* 右侧内容区域 */}</div>
+          <RenderPanel chatId={chatId} />
         </Panel>
       </Group>
     </main>
