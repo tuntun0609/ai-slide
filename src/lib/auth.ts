@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { nextCookies } from 'better-auth/next-js'
-import { admin, oAuthProxy } from 'better-auth/plugins'
+import { admin } from 'better-auth/plugins'
 import { headers } from 'next/headers'
 import { cache } from 'react'
 import { db } from '@/db'
@@ -19,16 +19,16 @@ export const auth = betterAuth({
   plugins: [
     nextCookies(),
     admin(),
-    oAuthProxy({
-      productionURL: 'https://aislide.tuntun.site',
-      currentURL: process.env.VERCEL_URL,
-    }),
+    // oAuthProxy({
+    //   productionURL: 'https://aislide.tuntun.site',
+    //   currentURL: process.env.VERCEL_URL,
+    // }),
   ],
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-      redirectUri: 'https://aislide.tuntun.site/api/auth/callback/google',
+      // redirectUri: 'https://aislide.tuntun.site/api/auth/callback/google',
     },
   },
 })
