@@ -8,7 +8,11 @@ import {
   type UIDataTypes,
   type UIMessage,
 } from 'ai'
+import { eq } from 'drizzle-orm'
+import { nanoid } from 'nanoid'
 import { z } from 'zod'
+import { db } from '@/db'
+import { chat, message } from '@/db/schema'
 import { defaultModel } from '@/lib/ai'
 import { getSession } from '@/lib/auth'
 
@@ -69,7 +73,85 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { messages }: { messages: ChatMessage[] } = await req.json()
+    const { messages, chatId }: { messages: ChatMessage[]; chatId?: string } =
+      await req.json()
+
+    const userId = session.user.id
+    let currentChatId = chatId
+
+    // 如果 chatId 不存在，创建新的 chat
+    if (!currentChatId) {
+      currentChatId = nanoid()
+      const firstUserMessage = messages.find((m) => m.role === 'user')
+      const title = firstUserMessage
+        ? firstUserMessage.parts
+            .find((p) => p.type === 'text')
+            ?.text?.slice(0, 50) || '新对话'
+        : '新对话'
+
+      await db.insert(chat).values({
+        id: currentChatId,
+        userId,
+        title,
+      })
+    }
+
+    // 查询数据库中已存在的消息，用于判断哪些消息是新消息
+    const existingMessages = await db
+      .select({ id: message.id, content: message.content, role: message.role })
+      .from(message)
+      .where(eq(message.chatId, currentChatId))
+
+    const existingMessageIds = new Set(existingMessages.map((m) => m.id))
+
+    // 找出需要保存的新用户消息（不在数据库中的消息）
+    const userMessages = messages.filter((msg) => msg.role === 'user')
+
+    // 过滤掉重复的消息：不仅检查 ID，还要检查内容是否已存在
+    const newUserMessages = userMessages.filter((msg) => {
+      // 如果消息 ID 已存在，跳过
+      if (existingMessageIds.has(msg.id)) {
+        return false
+      }
+
+      // 检查是否有相同内容的用户消息（避免重复保存）
+      const msgText = msg.parts.find((p) => p.type === 'text')?.text
+      if (msgText) {
+        const hasDuplicateContent = existingMessages.some((existing) => {
+          if (existing.role !== 'user') {
+            return false
+          }
+          const existingText = Array.isArray(existing.content)
+            ? existing.content.find(
+                (p: unknown) =>
+                  typeof p === 'object' &&
+                  p !== null &&
+                  'type' in p &&
+                  p.type === 'text'
+              )?.text
+            : null
+          return existingText === msgText
+        })
+        if (hasDuplicateContent) {
+          return false
+        }
+      }
+
+      return true
+    })
+
+    // 如果存在新消息，保存到数据库
+    // 注意：即使消息 ID 是 temp- 开头，我们也需要保存，但会生成新的数据库 ID
+    if (newUserMessages.length > 0) {
+      await db.insert(message).values(
+        newUserMessages.map((msg) => ({
+          id: nanoid(), // 始终生成新的数据库 ID
+          chatId: currentChatId,
+          role: msg.role,
+          content: msg.parts,
+        }))
+      )
+    }
 
     const result = streamText({
       model: defaultModel,
@@ -171,7 +253,34 @@ AntV Infographic Syntax 是一个用于描述信息图渲染配置的语法，�
       stopWhen: stepCountIs(5),
     })
 
-    return result.toUIMessageStreamResponse()
+    // 确保流式响应完成，即使客户端断开连接
+    result.consumeStream()
+
+    return result.toUIMessageStreamResponse({
+      originalMessages: messages,
+      generateMessageId: () => nanoid(),
+      onFinish: async ({ responseMessage }) => {
+        try {
+          // 更新 chat 的 updatedAt
+          await db
+            .update(chat)
+            .set({ updatedAt: new Date() })
+            .where(eq(chat.id, currentChatId!))
+
+          // 保存助手回复的消息
+          if (responseMessage) {
+            await db.insert(message).values({
+              id: responseMessage.id,
+              chatId: currentChatId!,
+              role: responseMessage.role,
+              content: responseMessage.parts,
+            })
+          }
+        } catch (error) {
+          console.error('Failed to save messages:', error)
+        }
+      },
+    })
   } catch (error) {
     console.error('Chat API error:', error)
     return new Response(

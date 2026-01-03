@@ -2,7 +2,7 @@
 
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ChatMessage } from '@/app/api/chat/route'
 import {
   Conversation,
@@ -43,6 +43,7 @@ import { Button } from '@/components/ui/button'
 
 interface ChatPanelProps {
   chatId: string
+  initialMessages?: ChatMessage[]
 }
 
 // 渲染工具组件的辅助函数
@@ -126,8 +127,11 @@ function renderMessagePart(
   }
 }
 
-export function ChatPanel({ chatId }: ChatPanelProps) {
+export function ChatPanel({ chatId, initialMessages = [] }: ChatPanelProps) {
   const [selectedModel, setSelectedModel] = useState('GPT-5.2')
+  const hasAutoSentRef = useRef(false)
+  const isInitializedRef = useRef(false)
+
   const { messages, sendMessage, status } = useChat<ChatMessage>({
     transport: new DefaultChatTransport({
       api: '/api/chat',
@@ -136,6 +140,70 @@ export function ChatPanel({ chatId }: ChatPanelProps) {
       },
     }),
     id: chatId,
+    messages: initialMessages,
+  })
+
+  // 自动发送初始消息：如果只有一条用户消息且没有 assistant 回复，则自动触发 AI 回复
+  useEffect(() => {
+    // 标记为已初始化
+    if (!isInitializedRef.current && status === 'ready') {
+      isInitializedRef.current = true
+    }
+
+    // 只在初始化完成、状态就绪、且未自动发送过时执行
+    if (
+      !isInitializedRef.current ||
+      hasAutoSentRef.current ||
+      status !== 'ready'
+    ) {
+      return
+    }
+
+    // 检查是否只有一条用户消息且没有 assistant 回复
+    const userMessages = messages.filter((msg) => msg.role === 'user')
+    const assistantMessages = messages.filter((msg) => msg.role === 'assistant')
+
+    if (userMessages.length === 1 && assistantMessages.length === 0) {
+      // 检查用户消息是否已经保存到数据库（通过检查是否在 initialMessages 中）
+      const userMessage = userMessages[0]
+      const isSavedMessage = initialMessages.some(
+        (m) => m.id === userMessage.id && m.role === 'user'
+      )
+
+      if (isSavedMessage) {
+        hasAutoSentRef.current = true
+        // 使用 sendMessage 触发 API 调用
+        // API 端会通过查询数据库判断消息是否已保存，避免重复保存
+        const textPart = userMessage.parts.find((p) => p.type === 'text')
+        if (textPart && 'text' in textPart && textPart.text) {
+          sendMessage({ text: textPart.text })
+        }
+      }
+    }
+  }, [messages, status, sendMessage, initialMessages])
+
+  // 过滤掉重复的消息：如果消息 ID 在 initialMessages 中存在，则不显示临时消息（避免重复显示）
+  const initialMessageIds = new Set(initialMessages.map((m) => m.id))
+  const displayMessages = messages.filter((msg) => {
+    // 如果消息已经在 initialMessages 中，说明是已保存的消息，应该显示
+    if (initialMessageIds.has(msg.id)) {
+      return true
+    }
+    // 对于不在 initialMessages 中的用户消息，检查是否有相同内容的已保存消息
+    if (msg.role === 'user') {
+      const savedUserMessage = initialMessages.find((m) => m.role === 'user')
+      if (savedUserMessage) {
+        const savedText = savedUserMessage.parts.find(
+          (p) => p.type === 'text'
+        )?.text
+        const currentText = msg.parts.find((p) => p.type === 'text')?.text
+        // 如果内容相同，不显示临时消息（避免重复显示）
+        if (savedText === currentText) {
+          return false
+        }
+      }
+    }
+    return true
   })
 
   const handleSubmit = (message: PromptInputMessage) => {
@@ -165,13 +233,13 @@ export function ChatPanel({ chatId }: ChatPanelProps) {
       {/* 消息列表区域 */}
       <Conversation className="flex-1">
         <ConversationContent className="mx-auto max-w-3xl">
-          {messages.length === 0 ? (
+          {displayMessages.length === 0 ? (
             <ConversationEmptyState
               description="输入消息开始与 AI 对话"
               title="开始对话"
             />
           ) : (
-            messages.map((message) => (
+            displayMessages.map((message) => (
               <Message from={message.role} key={message.id}>
                 <MessageContent>
                   {message.parts.map((part, i) =>

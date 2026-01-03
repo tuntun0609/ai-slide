@@ -5,6 +5,7 @@ import {
   Figma,
   ImageIcon,
   Layout,
+  Loader2,
   Plus,
   Settings2,
   Upload,
@@ -16,20 +17,49 @@ import { useRouter } from '@/i18n/navigation'
 
 export function LandingChatInterface() {
   const [input, setInput] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  const handleSubmit = (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
-    if (!input.trim()) {
+    const trimmedInput = input.trim()
+    if (!trimmedInput || isCreating) {
       return
     }
 
-    const chatId = crypto.randomUUID()
-    // We redirect to the chat page with the first message as a query param or similar
-    // For now, let's just redirect. The chat page will need to handle the initial message if we want to pass it.
-    // Alternatively, we can save the first message here if we had an API for it.
-    // For simplicity, let's just redirect and let the user type again, or use a clever way to pass the message.
-    router.push(`/chat/${chatId}`)
+    setIsCreating(true)
+    setError(null)
+
+    try {
+      // 创建新的 chat，并传递初始消息
+      const response = await fetch('/api/chat/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          initialMessage: trimmedInput,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || '创建对话失败，请稍后重试')
+      }
+
+      const { chatId } = await response.json()
+      // 清空输入框
+      setInput('')
+      // 跳转到新创建的 chat 页面，AI 会自动回复
+      router.push(`/chat/${chatId}`)
+    } catch (error) {
+      console.error('Failed to create chat:', error)
+      setError(
+        error instanceof Error ? error.message : '创建对话失败，请稍后重试'
+      )
+      setIsCreating(false)
+    }
   }
 
   return (
@@ -44,10 +74,14 @@ export function LandingChatInterface() {
           onSubmit={handleSubmit}
         >
           <Textarea
-            className="min-h-[140px] w-full resize-none border-0 bg-transparent p-4 pb-14 text-lg shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0"
-            onChange={(e) => setInput(e.target.value)}
+            className="min-h-[140px] w-full resize-none border-0 bg-transparent p-4 pb-14 text-lg shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0 disabled:opacity-50"
+            disabled={isCreating}
+            onChange={(e) => {
+              setInput(e.target.value)
+              setError(null) // 清除错误提示
+            }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+              if (e.key === 'Enter' && !e.shiftKey && !isCreating) {
                 e.preventDefault()
                 handleSubmit()
               }
@@ -103,16 +137,24 @@ export function LandingChatInterface() {
           <div className="absolute right-3 bottom-3">
             <Button
               className="h-9 w-9 rounded-xl bg-foreground text-background shadow-sm hover:bg-foreground/90"
-              disabled={!input.trim()}
+              disabled={!input.trim() || isCreating}
               size="icon"
               type="submit"
             >
-              <ArrowUp className="h-5 w-5" />
+              {isCreating ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <ArrowUp className="h-5 w-5" />
+              )}
             </Button>
           </div>
         </form>
+        {error && (
+          <div className="mt-3 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-2 text-destructive text-sm">
+            {error}
+          </div>
+        )}
       </div>
-      {/* ... rest of the component ... */}
 
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
         <Button
