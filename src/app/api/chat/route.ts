@@ -10,6 +10,7 @@ import {
 } from 'ai'
 import { eq } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/db'
 import { chat, message } from '@/db/schema'
@@ -76,76 +77,37 @@ export async function POST(req: Request) {
     const { messages, chatId }: { messages: ChatMessage[]; chatId?: string } =
       await req.json()
 
-    const userId = session.user.id
-    let currentChatId = chatId
+    const currentChatId = chatId
 
-    // 如果 chatId 不存在，创建新的 chat
+    // 如果 chatId 不存在，返回错误
     if (!currentChatId) {
-      currentChatId = nanoid()
-      const firstUserMessage = messages.find((m) => m.role === 'user')
-      const title = firstUserMessage
-        ? firstUserMessage.parts
-            .find((p) => p.type === 'text')
-            ?.text?.slice(0, 50) || '新对话'
-        : '新对话'
-
-      await db.insert(chat).values({
-        id: currentChatId,
-        userId,
-        title,
-      })
+      return NextResponse.json(
+        { error: 'Chat ID is required' },
+        { status: 400 }
+      )
     }
 
-    // 查询数据库中已存在的消息，用于判断哪些消息是新消息
+    // 查询数据库中已存在的消息 ID，用于判断哪些消息是新消息
     const existingMessages = await db
-      .select({ id: message.id, content: message.content, role: message.role })
+      .select({ id: message.id })
       .from(message)
       .where(eq(message.chatId, currentChatId))
 
     const existingMessageIds = new Set(existingMessages.map((m) => m.id))
 
     // 找出需要保存的新用户消息（不在数据库中的消息）
+    // 只检查消息 ID，不检查内容，允许用户发送相同内容的消息
     const userMessages = messages.filter((msg) => msg.role === 'user')
-
-    // 过滤掉重复的消息：不仅检查 ID，还要检查内容是否已存在
     const newUserMessages = userMessages.filter((msg) => {
-      // 如果消息 ID 已存在，跳过
-      if (existingMessageIds.has(msg.id)) {
-        return false
-      }
-
-      // 检查是否有相同内容的用户消息（避免重复保存）
-      const msgText = msg.parts.find((p) => p.type === 'text')?.text
-      if (msgText) {
-        const hasDuplicateContent = existingMessages.some((existing) => {
-          if (existing.role !== 'user') {
-            return false
-          }
-          const existingText = Array.isArray(existing.content)
-            ? existing.content.find(
-                (p: unknown) =>
-                  typeof p === 'object' &&
-                  p !== null &&
-                  'type' in p &&
-                  p.type === 'text'
-              )?.text
-            : null
-          return existingText === msgText
-        })
-        if (hasDuplicateContent) {
-          return false
-        }
-      }
-
-      return true
+      // 如果消息 ID 已存在，跳过（说明消息已经保存过）
+      return !existingMessageIds.has(msg.id)
     })
 
     // 如果存在新消息，保存到数据库
-    // 注意：即使消息 ID 是 temp- 开头，我们也需要保存，但会生成新的数据库 ID
     if (newUserMessages.length > 0) {
       await db.insert(message).values(
         newUserMessages.map((msg) => ({
-          id: nanoid(), // 始终生成新的数据库 ID
+          id: msg.id,
           chatId: currentChatId,
           role: msg.role,
           content: msg.parts,

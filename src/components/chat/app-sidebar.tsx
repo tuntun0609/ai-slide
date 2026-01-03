@@ -1,5 +1,4 @@
 import {
-  ChevronRight,
   Clock,
   FileText,
   FolderRoot,
@@ -17,7 +16,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -91,14 +89,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-2">
+        {/* <SidebarGroup className="mt-2">
           <SidebarGroupLabel className="group/label mb-1 flex cursor-pointer items-center justify-between px-2 transition-colors hover:text-foreground">
             <span className="font-semibold text-muted-foreground/70 text-xs uppercase tracking-wider">
               Favorites
             </span>
             <ChevronRight className="size-3 text-muted-foreground transition-transform group-hover/label:translate-x-0.5" />
           </SidebarGroupLabel>
-        </SidebarGroup>
+        </SidebarGroup> */}
 
         <Suspense fallback={<RecentChatsSkeleton />}>
           <RecentChats />

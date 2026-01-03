@@ -2,6 +2,7 @@
 
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
+import { TrashIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { ChatMessage } from '@/app/api/chat/route'
 import {
@@ -10,8 +11,11 @@ import {
   ConversationEmptyState,
   ConversationScrollButton,
 } from '@/components/ai-elements/conversation'
+import { Loader } from '@/components/ai-elements/loader'
 import {
   Message,
+  MessageAction,
+  MessageActions,
   MessageContent,
   MessageResponse,
 } from '@/components/ai-elements/message'
@@ -44,6 +48,7 @@ import { Button } from '@/components/ui/button'
 interface ChatPanelProps {
   chatId: string
   initialMessages?: ChatMessage[]
+  isNewChat?: boolean
 }
 
 // 渲染工具组件的辅助函数
@@ -127,60 +132,45 @@ function renderMessagePart(
   }
 }
 
-export function ChatPanel({ chatId, initialMessages = [] }: ChatPanelProps) {
+export function ChatPanel({
+  chatId,
+  initialMessages = [],
+  isNewChat = false,
+}: ChatPanelProps) {
   const [selectedModel, setSelectedModel] = useState('GPT-5.2')
   const hasAutoSentRef = useRef(false)
-  const isInitializedRef = useRef(false)
 
-  const { messages, sendMessage, status } = useChat<ChatMessage>({
-    transport: new DefaultChatTransport({
-      api: '/api/chat',
-      body: {
-        chatId,
-      },
-    }),
-    id: chatId,
-    messages: initialMessages,
-  })
+  const { messages, sendMessage, status, setMessages, regenerate } =
+    useChat<ChatMessage>({
+      transport: new DefaultChatTransport({
+        api: '/api/chat',
+        body: {
+          chatId,
+        },
+      }),
+      id: chatId,
+      messages: initialMessages,
+    })
 
-  // 自动发送初始消息：如果只有一条用户消息且没有 assistant 回复，则自动触发 AI 回复
+  // 自动发送初始消息：直接判断 isNewChat，如果是新建 chat 则自动发送第一条用户消息
   useEffect(() => {
-    // 标记为已初始化
-    if (!isInitializedRef.current && status === 'ready') {
-      isInitializedRef.current = true
-    }
-
-    // 只在初始化完成、状态就绪、且未自动发送过时执行
-    if (
-      !isInitializedRef.current ||
-      hasAutoSentRef.current ||
-      status !== 'ready'
-    ) {
+    // 如果已经自动发送过、状态未就绪、或不是新建 chat，则不执行
+    if (hasAutoSentRef.current || status !== 'ready' || !isNewChat) {
       return
     }
 
-    // 检查是否只有一条用户消息且没有 assistant 回复
-    const userMessages = messages.filter((msg) => msg.role === 'user')
-    const assistantMessages = messages.filter((msg) => msg.role === 'assistant')
-
-    if (userMessages.length === 1 && assistantMessages.length === 0) {
-      // 检查用户消息是否已经保存到数据库（通过检查是否在 initialMessages 中）
-      const userMessage = userMessages[0]
-      const isSavedMessage = initialMessages.some(
-        (m) => m.id === userMessage.id && m.role === 'user'
-      )
-
-      if (isSavedMessage) {
+    // 找到第一条用户消息
+    const firstUserMessage = initialMessages.find((msg) => msg.role === 'user')
+    if (firstUserMessage) {
+      const textPart = firstUserMessage.parts.find((p) => p.type === 'text')
+      if (textPart && 'text' in textPart && textPart.text) {
         hasAutoSentRef.current = true
-        // 使用 sendMessage 触发 API 调用
-        // API 端会通过查询数据库判断消息是否已保存，避免重复保存
-        const textPart = userMessage.parts.find((p) => p.type === 'text')
-        if (textPart && 'text' in textPart && textPart.text) {
-          sendMessage({ text: textPart.text })
-        }
+        regenerate({
+          messageId: firstUserMessage.id,
+        })
       }
     }
-  }, [messages, status, sendMessage, initialMessages])
+  }, [status, regenerate, initialMessages, isNewChat])
 
   // 过滤掉重复的消息：如果消息 ID 在 initialMessages 中存在，则不显示临时消息（避免重复显示）
   const initialMessageIds = new Set(initialMessages.map((m) => m.id))
@@ -228,6 +218,28 @@ export function ChatPanel({ chatId, initialMessages = [] }: ChatPanelProps) {
     return undefined
   }
 
+  // 处理删除消息
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      // 调用 API 删除消息
+      const response = await fetch(`/api/chat/${chatId}/message/${messageId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete message')
+      }
+
+      // 从本地消息列表中移除该消息
+      setMessages((prevMessages) =>
+        prevMessages.filter((msg) => msg.id !== messageId)
+      )
+    } catch (error) {
+      console.error('Error deleting message:', error)
+      // 可以在这里添加错误提示
+    }
+  }
+
   return (
     <div className="flex h-full flex-col">
       {/* 消息列表区域 */}
@@ -239,15 +251,64 @@ export function ChatPanel({ chatId, initialMessages = [] }: ChatPanelProps) {
               title="开始对话"
             />
           ) : (
-            displayMessages.map((message) => (
-              <Message from={message.role} key={message.id}>
-                <MessageContent>
-                  {message.parts.map((part, i) =>
-                    renderMessagePart(part, message.id, i)
+            displayMessages.map((message, index) => {
+              // 判断是否是正在生成中的消息：最后一条 assistant 消息且 status 为 streaming
+              const isLastMessage = index === displayMessages.length - 1
+              const isStreaming = status === 'streaming'
+              const isGenerating =
+                isLastMessage && isStreaming && message.role === 'assistant'
+
+              // 检查消息是否有实际内容
+              const hasContent = message.parts.some((part) => {
+                if (part.type === 'text' && 'text' in part && part.text) {
+                  return part.text.trim().length > 0
+                }
+                // 对于工具调用，检查是否有输入或输出
+                if (part.type.startsWith('tool-')) {
+                  return (
+                    ('input' in part && part.input !== undefined) ||
+                    ('output' in part && part.output !== undefined) ||
+                    ('errorText' in part && part.errorText !== undefined)
+                  )
+                }
+                return false
+              })
+
+              // 如果正在生成且没有内容，显示 loading
+              const showLoading = isGenerating && !hasContent
+
+              return (
+                <Message from={message.role} key={message.id}>
+                  <MessageContent>
+                    {showLoading ? (
+                      <Loader className="text-muted-foreground" size={16} />
+                    ) : (
+                      message.parts.map((part, i) =>
+                        renderMessagePart(part, message.id, i)
+                      )
+                    )}
+                  </MessageContent>
+                  {!isGenerating && (
+                    <MessageActions
+                      className={
+                        message.role === 'user' ? 'ml-auto justify-end' : ''
+                      }
+                    >
+                      <MessageAction
+                        label="删除消息"
+                        onClick={() => handleDeleteMessage(message.id)}
+                        tooltip="删除消息"
+                      >
+                        <TrashIcon
+                          className="text-muted-foreground"
+                          size={14}
+                        />
+                      </MessageAction>
+                    </MessageActions>
                   )}
-                </MessageContent>
-              </Message>
-            ))
+                </Message>
+              )
+            })
           )}
         </ConversationContent>
         <ConversationScrollButton />

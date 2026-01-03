@@ -11,11 +11,13 @@ interface ChatPanelsProps {
   chatId: string
   defaultLayout?: Layout
   initialMessages?: ChatMessage[]
+  isNewChat?: boolean
 }
 export function ChatPanels({
   chatId,
   defaultLayout,
   initialMessages = [],
+  isNewChat = false,
 }: ChatPanelsProps) {
   const onLayoutChange = (layout: Layout) => {
     Cookies.set(RESIZABLE_PANELS_COOKIE_NAME, JSON.stringify(layout))
@@ -35,7 +37,11 @@ export function ChatPanels({
           id="chat-side-panel"
           minSize="300px"
         >
-          <ChatPanel chatId={chatId} initialMessages={initialMessages} />
+          <ChatPanel
+            chatId={chatId}
+            initialMessages={initialMessages}
+            isNewChat={isNewChat}
+          />
         </Panel>
 
         <Separator className="relative w-2 rounded-full bg-transparent transition-all hover:bg-primary/5 focus-visible:outline-none data-[dragging=true]:bg-primary/10">
