@@ -1,7 +1,4 @@
-'use client'
-
 import {
-  ChevronDown,
   ChevronRight,
   Clock,
   FileText,
@@ -11,7 +8,7 @@ import {
   Search,
 } from 'lucide-react'
 import type * as React from 'react'
-import { useState } from 'react'
+import { Suspense } from 'react'
 import { LogoIcon } from '@/components/logo'
 import { buttonVariants } from '@/components/ui/button'
 import {
@@ -29,21 +26,10 @@ import {
 } from '@/components/ui/sidebar'
 import { Link } from '@/i18n/navigation'
 import { cn } from '@/lib/utils'
-
-// Mock data
-const recentChats = [
-  { id: '1', title: 'Nano Banana Starter test' },
-  { id: '2', title: 'Image tool homepage' },
-  { id: '3', title: 'Workday earnings calculat...' },
-  { id: '4', title: 'AI image editor UI' },
-  { id: '5', title: 'Content plaza design' },
-  { id: '6', title: 'Content upload form' },
-  { id: '7', title: 'Dynamic wallpaper website' },
-]
+import { RecentChats } from './recent-chats/recent-chats'
+import { RecentChatsSkeleton } from './recent-chats/recent-chats-skeleton'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [isRecentChatsExpanded, setIsRecentChatsExpanded] = useState(true)
-
   return (
     <Sidebar {...props}>
       <SidebarHeader className="px-2 pt-4">
@@ -114,40 +100,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupLabel>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-2">
-          <SidebarGroupLabel
-            className="group/label mb-1 flex cursor-pointer items-center justify-between px-2 transition-colors hover:text-foreground"
-            onClick={() => setIsRecentChatsExpanded(!isRecentChatsExpanded)}
-          >
-            <span className="font-semibold text-muted-foreground/70 text-xs uppercase tracking-wider">
-              Recent Chats
-            </span>
-            <ChevronDown
-              className={cn(
-                'size-3 text-muted-foreground transition-transform duration-200',
-                !isRecentChatsExpanded && '-rotate-90'
-              )}
-            />
-          </SidebarGroupLabel>
-          {isRecentChatsExpanded && (
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {recentChats.map((chat) => (
-                  <SidebarMenuItem key={chat.id}>
-                    <SidebarMenuButton
-                      className="h-auto overflow-hidden py-2.5"
-                      render={<Link href={`/chat/${chat.id}`} />}
-                    >
-                      <span className="truncate font-medium text-[13px] text-muted-foreground/80 transition-colors hover:text-foreground">
-                        {chat.title}
-                      </span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          )}
-        </SidebarGroup>
+        <Suspense fallback={<RecentChatsSkeleton />}>
+          <RecentChats />
+        </Suspense>
       </SidebarContent>
 
       <SidebarFooter className="mt-auto p-4">
