@@ -2,7 +2,7 @@
 
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
-import { TrashIcon } from 'lucide-react'
+import { CheckIcon, CopyIcon, TrashIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { ChatMessage } from '@/app/api/chat/route'
 import {
@@ -240,6 +240,33 @@ export function ChatPanel({
     }
   }
 
+  // 提取消息的文本内容
+  const extractMessageText = (message: ChatMessage): string => {
+    return message.parts
+      .filter((part) => part.type === 'text' && 'text' in part && part.text)
+      .map((part) => ('text' in part ? part.text : ''))
+      .join('\n\n')
+  }
+
+  // 处理复制消息内容
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
+  const handleCopyMessage = async (message: ChatMessage) => {
+    const text = extractMessageText(message)
+    if (!text) {
+      return
+    }
+
+    try {
+      if (typeof window !== 'undefined' && navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text)
+        setCopiedMessageId(message.id)
+        setTimeout(() => setCopiedMessageId(null), 2000)
+      }
+    } catch (error) {
+      console.error('Error copying message:', error)
+    }
+  }
+
   return (
     <div className="flex h-full flex-col">
       {/* 消息列表区域 */}
@@ -294,6 +321,30 @@ export function ChatPanel({
                         message.role === 'user' ? 'ml-auto justify-end' : ''
                       }
                     >
+                      {message.role === 'assistant' &&
+                        extractMessageText(message) && (
+                          <MessageAction
+                            label="复制内容"
+                            onClick={() => handleCopyMessage(message)}
+                            tooltip={
+                              copiedMessageId === message.id
+                                ? '已复制'
+                                : '复制内容'
+                            }
+                          >
+                            {copiedMessageId === message.id ? (
+                              <CheckIcon
+                                className="text-muted-foreground"
+                                size={14}
+                              />
+                            ) : (
+                              <CopyIcon
+                                className="text-muted-foreground"
+                                size={14}
+                              />
+                            )}
+                          </MessageAction>
+                        )}
                       <MessageAction
                         label="删除消息"
                         onClick={() => handleDeleteMessage(message.id)}
