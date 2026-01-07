@@ -2,7 +2,7 @@
 
 import { Infographic } from '@antv/infographic'
 import { useAtomValue } from 'jotai'
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { selectedInfographicAtom } from '@/store/slide-store'
 
 interface InfographicViewerProps {
@@ -14,70 +14,79 @@ export function InfographicViewer({ slideId }: InfographicViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const infographicInstanceRef = useRef<Infographic | null>(null)
 
+  // 清理 Infographic 实例
+  const cleanupInfographic = useCallback(() => {
+    if (infographicInstanceRef.current) {
+      infographicInstanceRef.current.destroy()
+      infographicInstanceRef.current = null
+    }
+  }, [])
+
+  // 渲染 Infographic（只在内容变化时渲染一次）
+  const renderInfographic = useCallback(
+    (content: string) => {
+      if (!containerRef.current) {
+        return
+      }
+
+      cleanupInfographic()
+      containerRef.current.innerHTML = ''
+
+      try {
+        // 创建 Infographic 实例，使用 100% 宽度和高度，让 SVG 自适应容器
+        const infographic = new Infographic({
+          container: containerRef.current,
+          width: '100%',
+          height: '100%',
+        })
+
+        // 使用字符串渲染
+        infographic.render(content)
+
+        // 保存实例引用
+        infographicInstanceRef.current = infographic
+      } catch (error) {
+        console.error('Failed to render infographic:', error)
+        // 显示错误信息
+        if (containerRef.current) {
+          const errorMessage =
+            error instanceof Error ? error.message : '未知错误'
+          containerRef.current.innerHTML = `
+          <div style="padding: 20px; text-align: center; color: #ef4444;">
+            <p style="font-weight: 500; margin-bottom: 8px;">渲染错误</p>
+            <p style="font-size: 12px; color: #6b7280;">${errorMessage}</p>
+          </div>
+        `
+        }
+      }
+    },
+    [cleanupInfographic]
+  )
+
+  // 只在内容变化时渲染一次
   useEffect(() => {
     if (!(selectedInfographic?.content && containerRef.current)) {
-      // 清理之前的实例
-      if (infographicInstanceRef.current) {
-        infographicInstanceRef.current.destroy()
-        infographicInstanceRef.current = null
-      }
+      cleanupInfographic()
       return
     }
 
-    try {
-      // 清理之前的实例
-      if (infographicInstanceRef.current) {
-        infographicInstanceRef.current.destroy()
-        infographicInstanceRef.current = null
-      }
+    // 延迟渲染以确保容器已挂载
+    const timer = setTimeout(() => {
+      renderInfographic(selectedInfographic.content)
+    }, 0)
 
-      // 清空容器
-      containerRef.current.innerHTML = ''
-
-      // 创建 Infographic 实例，直接传入语法字符串
-      const infographic = new Infographic({
-        container: containerRef.current,
-        width: '100%',
-        height: '100%',
-      })
-
-      // 使用字符串渲染
-      infographic.render(selectedInfographic.content)
-
-      // 保存实例引用
-      infographicInstanceRef.current = infographic
-    } catch (error) {
-      console.error('Failed to render infographic:', error)
-      // 显示错误信息
-      if (containerRef.current) {
-        containerRef.current.innerHTML = `
-          <div style="padding: 20px; text-align: center; color: #ef4444;">
-            <p style="font-weight: 500; margin-bottom: 8px;">渲染错误</p>
-            <p style="font-size: 12px; color: #6b7280;">${error instanceof Error ? error.message : '未知错误'}</p>
-          </div>
-        `
-      }
-    }
-
-    // 清理函数
     return () => {
-      if (infographicInstanceRef.current) {
-        infographicInstanceRef.current.destroy()
-        infographicInstanceRef.current = null
-      }
+      clearTimeout(timer)
+      cleanupInfographic()
     }
-  }, [selectedInfographic?.content])
+  }, [selectedInfographic?.content, cleanupInfographic, renderInfographic])
 
   return (
-    <div className="flex h-full flex-col items-center justify-center p-8">
-      <div className="flex aspect-video w-full max-w-4xl items-center justify-center overflow-hidden rounded-lg border-2 border-dashed bg-muted/50">
+    <div className="flex h-full w-full items-center justify-center p-8">
+      <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border-2 border-dashed">
         {selectedInfographic ? (
-          <div className="relative h-full w-full">
-            <div
-              className="h-full w-full"
-              ref={containerRef}
-              style={{ minHeight: '400px' }}
-            />
+          <div className="relative flex h-full w-full items-center justify-center">
+            <div className="h-full w-full" ref={containerRef} />
           </div>
         ) : (
           <div className="text-center">
