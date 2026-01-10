@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Layout, PanelImperativeHandle } from 'react-resizable-panels'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import {
   editingInfographicContentAtom,
@@ -15,6 +16,7 @@ import {
   slideAtom,
 } from '@/store/slide-store'
 import { RESIZABLE_PANELS_COOKIE_NAME } from '@/type'
+import { AIGenerator } from './ai-generator'
 import { InfographicEditor } from './infographic-editor'
 import { InfographicViewer } from './infographic-viewer'
 
@@ -108,20 +110,38 @@ export function SlidePanels({
         >
           {!isCollapsed && (
             <div className="flex h-full flex-col">
-              <div className="flex items-center justify-between border-b p-2 px-4">
-                <span className="font-semibold text-sm">编辑器</span>
-                <Button
-                  className="h-8 w-8"
-                  onClick={toggleCollapse}
-                  size="icon"
-                  variant="ghost"
-                >
-                  <PanelRightClose className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="min-h-0 flex-1">
-                <InfographicEditor slideId={slideId} />
-              </div>
+              <Tabs className="flex h-full flex-col" defaultValue="editor">
+                <div className="flex items-center justify-between border-b p-2 px-4">
+                  <TabsList className="h-auto bg-transparent p-0">
+                    <TabsTrigger
+                      className="data-active:bg-transparent data-active:shadow-none"
+                      value="editor"
+                    >
+                      编辑器
+                    </TabsTrigger>
+                    <TabsTrigger
+                      className="data-active:bg-transparent data-active:shadow-none"
+                      value="ai"
+                    >
+                      AI 生成
+                    </TabsTrigger>
+                  </TabsList>
+                  <Button
+                    className="h-8 w-8"
+                    onClick={toggleCollapse}
+                    size="icon"
+                    variant="ghost"
+                  >
+                    <PanelRightClose className="h-4 w-4" />
+                  </Button>
+                </div>
+                <TabsContent className="min-h-0 flex-1" value="editor">
+                  <InfographicEditor slideId={slideId} />
+                </TabsContent>
+                <TabsContent className="min-h-0 flex-1" value="ai">
+                  <AIGenerator slideId={slideId} />
+                </TabsContent>
+              </Tabs>
             </div>
           )}
         </Panel>
