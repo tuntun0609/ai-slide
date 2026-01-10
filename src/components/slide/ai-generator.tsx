@@ -3,10 +3,29 @@
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import { useAtom, useAtomValue } from 'jotai'
-import { ArrowUp, Loader2 } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { ChatMessage } from '@/app/api/chat/route'
+import {
+  Conversation,
+  ConversationContent,
+  ConversationEmptyState,
+  ConversationScrollButton,
+} from '@/components/ai-elements/conversation'
+import { Loader } from '@/components/ai-elements/loader'
+import {
+  Message,
+  MessageContent,
+  MessageResponse,
+} from '@/components/ai-elements/message'
+import {
+  PromptInput,
+  PromptInputBody,
+  PromptInputFooter,
+  type PromptInputMessage,
+  PromptInputSubmit,
+  PromptInputTextarea,
+} from '@/components/ai-elements/prompt-input'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   selectedInfographicIdAtom,
   updateInfographicContentAtom,
@@ -16,19 +35,21 @@ interface AIGeneratorProps {
   slideId: string
 }
 
+// 正则表达式定义在顶层作用域
+const plainBlockRegex = /```plain\s*([\s\S]*?)```/
+const codeBlockRegex = /```[\w]*\s*([\s\S]*?)```/
+
 // 从 AI 响应中提取 infographic 语法
 function extractInfographicSyntax(text: string): string | null {
   // 查找 ```plain 代码块中的内容
-  const plainBlockRegex = /```plain\s*([\s\S]*?)```/
   const match = text.match(plainBlockRegex)
-  if (match && match[1]) {
+  if (match?.[1]) {
     return match[1].trim()
   }
 
   // 如果没有找到 plain 代码块，尝试查找其他代码块
-  const codeBlockRegex = /```[\w]*\s*([\s\S]*?)```/
   const codeMatch = text.match(codeBlockRegex)
-  if (codeMatch && codeMatch[1]) {
+  if (codeMatch?.[1]) {
     return codeMatch[1].trim()
   }
 
@@ -40,8 +61,15 @@ function extractInfographicSyntax(text: string): string | null {
   return null
 }
 
+// 提取消息的文本内容
+function extractMessageText(message: ChatMessage): string {
+  return message.parts
+    .filter((part) => part.type === 'text' && 'text' in part && part.text)
+    .map((part) => ('text' in part ? part.text : ''))
+    .join('\n\n')
+}
+
 export function AIGenerator({ slideId }: AIGeneratorProps) {
-  const [input, setInput] = useState('')
   const [error, setError] = useState<string | null>(null)
   const selectedId = useAtomValue(selectedInfographicIdAtom)
   const [, updateInfographicContent] = useAtom(updateInfographicContentAtom)
@@ -50,7 +78,7 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
   // 创建一个临时的 chatId 用于 AI 生成，只在组件挂载时创建一次
   const tempChatId = useMemo(() => `temp-${slideId}-${Date.now()}`, [slideId])
 
-  const { messages, append, status } = useChat({
+  const { messages, sendMessage, status } = useChat<ChatMessage>({
     transport: new DefaultChatTransport({
       api: '/api/chat',
       body: {
@@ -58,10 +86,19 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
       },
     }),
     id: tempChatId,
-    onFinish: (message) => {
-      // 当 AI 回复完成时，提取 infographic 语法并应用
-      if (message.role === 'assistant' && selectedId) {
-        const textContent = message.content
+  })
+
+  // 监听消息变化，当最后一条 assistant 消息完成时处理
+  useEffect(() => {
+    if (
+      status === 'ready' &&
+      hasProcessedRef.current &&
+      messages.length > 0 &&
+      selectedId
+    ) {
+      const lastMessage = messages.at(-1)
+      if (lastMessage && lastMessage.role === 'assistant') {
+        const textContent = extractMessageText(lastMessage)
         const syntax = extractInfographicSyntax(textContent)
 
         if (syntax) {
@@ -69,24 +106,18 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
             infographicId: selectedId,
             content: syntax,
           })
-          setInput('')
           setError(null)
         } else {
           setError('未能从 AI 响应中提取到有效的信息图语法')
         }
+        hasProcessedRef.current = false
       }
-      hasProcessedRef.current = false
-    },
-    onError: (error) => {
-      setError(error.message || '生成失败，请稍后重试')
-      hasProcessedRef.current = false
-    },
-  })
+    }
+  }, [status, messages, selectedId, updateInfographicContent])
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault()
-    const trimmedInput = input.trim()
-    if (!trimmedInput || status === 'streaming' || !selectedId) {
+  const handleSubmit = (message: PromptInputMessage) => {
+    const trimmedInput = message.text.trim()
+    if (!trimmedInput || status !== 'ready' || !selectedId) {
       if (!selectedId) {
         setError('请先选择一个信息图')
       }
@@ -97,121 +128,136 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
     hasProcessedRef.current = true
 
     try {
-      await append({
-        role: 'user',
-        content: trimmedInput,
-      })
+      sendMessage({ text: trimmedInput })
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成失败，请稍后重试')
       hasProcessedRef.current = false
     }
   }
 
-  const isLoading = status === 'streaming' || hasProcessedRef.current
+  // 将 status 转换为 PromptInputSubmit 需要的格式
+  const getSubmitStatus = () => {
+    if (status === 'streaming') {
+      return 'streaming'
+    }
+    if (status === 'submitted') {
+      return 'submitted'
+    }
+    if (status === 'error') {
+      return 'error'
+    }
+    return undefined
+  }
+
+  const isLoading =
+    status === 'streaming' || status === 'submitted' || hasProcessedRef.current
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
-      <div className="flex-1 overflow-auto p-4">
-        <div className="space-y-4">
-          <div>
-            <h3 className="mb-2 font-semibold text-sm">AI 生成信息图</h3>
-            <p className="text-muted-foreground text-sm">
-              描述你想要生成的信息图内容，AI 会自动生成对应的 AntV Infographic
-              语法
-            </p>
+      {/* 消息列表区域 */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {error && (
+          <div className="border-b p-4">
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           </div>
+        )}
 
-          {error && (
-            <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-2 text-destructive text-sm">
-              {error}
-            </div>
-          )}
+        <Conversation className="flex-1">
+          <ConversationContent className="p-4">
+            {messages.length === 0 && !isLoading ? (
+              <ConversationEmptyState
+                description="描述你想要生成的信息图内容，AI 会自动生成对应的 AntV Infographic
+            语法"
+                title="AI 生成信息图"
+              />
+            ) : (
+              messages.map((message, index) => {
+                const isLastMessage = index === messages.length - 1
+                const isStreaming = status === 'streaming'
+                const isGenerating =
+                  isLastMessage && isStreaming && message.role === 'assistant'
 
-          {isLoading && (
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>AI 正在生成中...</span>
-            </div>
-          )}
+                const textContent = extractMessageText(message)
+                const hasContent = textContent.trim().length > 0
+                const showLoading = isGenerating && !hasContent
 
-          {messages.length > 0 && (
-            <div className="space-y-2">
-              {messages.map((message) => {
-                if (message.role === 'assistant') {
-                  const syntax = extractInfographicSyntax(message.content)
+                // 对于用户消息，直接显示文本内容
+                if (message.role === 'user') {
                   return (
-                    <div
-                      className="rounded-lg border bg-muted/50 p-3 text-sm"
-                      key={message.id}
-                    >
-                      <div className="mb-2 font-medium text-muted-foreground text-xs">
-                        AI 生成的内容：
-                      </div>
-                      {syntax ? (
-                        <pre className="overflow-x-auto whitespace-pre-wrap text-xs">
-                          {syntax}
-                        </pre>
-                      ) : (
-                        <div className="text-muted-foreground text-xs">
-                          {message.content}
-                        </div>
-                      )}
-                    </div>
+                    <Message from={message.role} key={message.id}>
+                      <MessageContent>
+                        <MessageResponse>{textContent}</MessageResponse>
+                      </MessageContent>
+                    </Message>
                   )
                 }
-                return null
-              })}
-            </div>
-          )}
-        </div>
+
+                // 对于助手消息，尝试提取 infographic 语法
+                const syntax = extractInfographicSyntax(textContent)
+
+                return (
+                  <Message from={message.role} key={message.id}>
+                    <MessageContent>
+                      {showLoading ? (
+                        <Loader className="text-muted-foreground" size={16} />
+                      ) : (
+                        <div className="space-y-2">
+                          {syntax ? (
+                            <div className="space-y-1">
+                              <div className="font-medium text-muted-foreground text-xs">
+                                AI 生成的内容：
+                              </div>
+                              <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-muted/50 p-3 text-xs">
+                                {syntax}
+                              </pre>
+                            </div>
+                          ) : (
+                            <MessageResponse>{textContent}</MessageResponse>
+                          )}
+                        </div>
+                      )}
+                    </MessageContent>
+                  </Message>
+                )
+              })
+            )}
+
+            {isLoading && messages.length === 0 && (
+              <div className="flex items-center justify-center py-8">
+                <Loader className="text-muted-foreground" size={16} />
+                <span className="ml-2 text-muted-foreground text-sm">
+                  AI 正在生成中...
+                </span>
+              </div>
+            )}
+          </ConversationContent>
+          <ConversationScrollButton />
+        </Conversation>
       </div>
 
-      <div className="border-t p-4">
-        <form
-          className="relative flex w-full flex-col rounded-lg border bg-background transition-all focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20"
-          onSubmit={handleSubmit}
-        >
-          <Textarea
-            className="min-h-[100px] w-full resize-none border-0 bg-transparent p-3 pb-12 text-sm shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0 disabled:opacity-50"
-            disabled={isLoading || !selectedId}
-            onChange={(e) => {
-              setInput(e.target.value)
-              setError(null)
-            }}
-            onKeyDown={(e) => {
-              if (
-                e.key === 'Enter' &&
-                !e.shiftKey &&
-                !isLoading &&
+      {/* 输入区域 */}
+      <div className="border-t bg-background p-4">
+        <PromptInput onSubmit={handleSubmit}>
+          <PromptInputBody>
+            <PromptInputTextarea
+              disabled={isLoading || !selectedId}
+              placeholder={
                 selectedId
-              ) {
-                e.preventDefault()
-                handleSubmit()
+                  ? '描述你想要生成的信息图内容...'
+                  : '请先选择一个信息图'
               }
-            }}
-            placeholder={
-              selectedId
-                ? '描述你想要生成的信息图内容...'
-                : '请先选择一个信息图'
-            }
-            value={input}
-          />
-
-          <div className="absolute right-3 bottom-3">
-            <Button
-              className="h-8 w-8 rounded-lg bg-foreground text-background shadow-sm hover:bg-foreground/90"
-              disabled={!input.trim() || isLoading || !selectedId}
-              size="icon"
-              type="submit"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ArrowUp className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-        </form>
+            />
+          </PromptInputBody>
+          <PromptInputFooter>
+            <div />
+            <PromptInputSubmit
+              disabled={!selectedId}
+              status={getSubmitStatus()}
+            />
+          </PromptInputFooter>
+        </PromptInput>
       </div>
     </div>
   )
