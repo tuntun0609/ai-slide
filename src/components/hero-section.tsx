@@ -151,7 +151,7 @@ export default function HeroSection() {
                     <Button
                       className="rounded-xl px-5 text-base"
                       nativeButton={false}
-                      render={<Link href="#link" />}
+                      render={<Link href="/slide" />}
                       size="lg"
                     >
                       <span className="text-nowrap">Start Building</span>
