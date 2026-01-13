@@ -184,7 +184,7 @@ export function InfographicViewer({ slideId }: InfographicViewerProps) {
       <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border-2 border-dashed">
         {selectedInfographic ? (
           <div className="relative flex h-full w-full items-center justify-center">
-            <div className="h-full w-full" ref={containerRef} />
+            <div className="h-full w-full bg-background" ref={containerRef} />
           </div>
         ) : (
           <div className="text-center">
