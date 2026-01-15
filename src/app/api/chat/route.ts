@@ -4,55 +4,14 @@ import {
   stepCountIs,
   streamText,
   type ToolSet,
-  tool,
   type UIDataTypes,
   type UIMessage,
 } from 'ai'
-import { z } from 'zod'
 import { defaultModel } from '@/lib/ai'
 import { getSession } from '@/lib/auth'
 
 // 定义工具集合
-const tools = {
-  getWeather: tool({
-    description: 'Get the weather for a location',
-    inputSchema: z.object({
-      city: z.string().describe('The city to get the weather for'),
-      unit: z
-        .enum(['C', 'F'])
-        .describe('The unit to display the temperature in'),
-    }),
-    execute: ({ city, unit }) => {
-      // 模拟天气数据
-      const weather = {
-        value: Math.floor(Math.random() * 30) + 10,
-        description: ['Sunny', 'Cloudy', 'Rainy', 'Snowy'][
-          Math.floor(Math.random() * 4)
-        ],
-      }
-
-      return `It is currently ${weather.value}°${unit} and ${weather.description} in ${city}!`
-    },
-  }),
-  calculate: tool({
-    description: 'Perform mathematical calculations',
-    inputSchema: z.object({
-      expression: z
-        .string()
-        .describe('The mathematical expression to evaluate'),
-    }),
-    execute: ({ expression }) => {
-      try {
-        // 简单的安全计算（仅支持基本数学运算）
-        const sanitized = expression.replace(/[^0-9+\-*/().\s]/g, '')
-        const result = Function(`"use strict"; return (${sanitized})`)()
-        return `计算结果: ${result}`
-      } catch (error) {
-        return `计算错误: ${error instanceof Error ? error.message : '未知错误'}`
-      }
-    },
-  }),
-} satisfies ToolSet
+const tools = {} satisfies ToolSet
 
 // 导出工具类型供前端使用
 export type ChatTools = InferUITools<typeof tools>

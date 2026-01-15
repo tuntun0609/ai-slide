@@ -78,7 +78,12 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
   // 创建一个临时的 chatId 用于 AI 生成，只在组件挂载时创建一次
   const tempChatId = useMemo(() => `temp-${slideId}-${Date.now()}`, [slideId])
 
-  const { messages, sendMessage, status } = useChat<ChatMessage>({
+  const {
+    messages,
+    sendMessage,
+    status,
+    error: chatError,
+  } = useChat<ChatMessage>({
     transport: new DefaultChatTransport({
       api: '/api/chat',
       body: {
@@ -87,6 +92,15 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
     }),
     id: tempChatId,
   })
+
+  // 监听错误状态
+  useEffect(() => {
+    if (status === 'error') {
+      const errorMessage = chatError?.message || '请求失败，请稍后重试'
+      setError(errorMessage)
+      hasProcessedRef.current = false
+    }
+  }, [status, chatError])
 
   // 监听消息变化，当最后一条 assistant 消息完成时处理
   useEffect(() => {
@@ -117,10 +131,20 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
 
   const handleSubmit = (message: PromptInputMessage) => {
     const trimmedInput = message.text.trim()
-    if (!trimmedInput || status !== 'ready' || !selectedId) {
+    if (!(trimmedInput && selectedId)) {
       if (!selectedId) {
         setError('请先选择一个信息图')
       }
+      return
+    }
+
+    // 如果当前状态是错误，允许重新发送（会重置状态）
+    if (status === 'error') {
+      setError(null)
+    }
+
+    // 只有在 ready 状态时才发送，但允许从 error 状态恢复
+    if (status !== 'ready' && status !== 'error') {
       return
     }
 
@@ -150,7 +174,21 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
   }
 
   const isLoading =
-    status === 'streaming' || status === 'submitted' || hasProcessedRef.current
+    (status === 'streaming' ||
+      status === 'submitted' ||
+      hasProcessedRef.current) &&
+    status !== 'error'
+
+  // 获取输入框的 placeholder 文本
+  const getPlaceholder = () => {
+    if (!selectedId) {
+      return '请先选择一个信息图'
+    }
+    if (status === 'error') {
+      return '发生错误，可以重新发送消息...'
+    }
+    return '描述你想要生成的信息图内容...'
+  }
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
@@ -243,11 +281,7 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
           <PromptInputBody>
             <PromptInputTextarea
               disabled={isLoading || !selectedId}
-              placeholder={
-                selectedId
-                  ? '描述你想要生成的信息图内容...'
-                  : '请先选择一个信息图'
-              }
+              placeholder={getPlaceholder()}
             />
           </PromptInputBody>
           <PromptInputFooter>
