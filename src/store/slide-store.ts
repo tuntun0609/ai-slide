@@ -70,15 +70,45 @@ export const updateInfographicContentAtom = atom(
 // 添加新的 infographic
 export const addInfographicAtom = atom(
   null,
-  (get, set, infographic: Infographic) => {
+  (
+    get,
+    set,
+    {
+      infographic,
+      afterId,
+    }: { infographic: Infographic; afterId?: string | null }
+  ) => {
     const slide = get(slideAtom)
     if (!slide) {
       return
     }
 
+    let updatedInfographics: Infographic[]
+
+    if (afterId) {
+      // 在当前页之后插入
+      const currentIndex = slide.infographics.findIndex(
+        (info) => info.id === afterId
+      )
+      if (currentIndex >= 0) {
+        // 在找到的位置之后插入
+        updatedInfographics = [
+          ...slide.infographics.slice(0, currentIndex + 1),
+          infographic,
+          ...slide.infographics.slice(currentIndex + 1),
+        ]
+      } else {
+        // 如果找不到，添加到末尾
+        updatedInfographics = [...slide.infographics, infographic]
+      }
+    } else {
+      // 如果没有指定 afterId，添加到末尾（向后兼容）
+      updatedInfographics = [...slide.infographics, infographic]
+    }
+
     set(slideAtom, {
       ...slide,
-      infographics: [...slide.infographics, infographic],
+      infographics: updatedInfographics,
     })
 
     // 自动选中新添加的 infographic
