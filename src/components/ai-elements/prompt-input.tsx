@@ -301,7 +301,7 @@ export function PromptInputAttachment({
       <HoverCardTrigger render={<div className={cn(
                       "group relative flex h-8 cursor-pointer select-none items-center gap-1.5 rounded-md border border-border px-1.5 font-medium text-sm transition-all hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
                       className
-                    )} key={data.id} {...props} />} nativeButton={false}><div className="relative size-5 shrink-0">
+                    )} key={data.id} {...props} />}><div className="relative size-5 shrink-0">
                       <div className="absolute inset-0 flex size-5 items-center justify-center overflow-hidden rounded bg-background transition-opacity group-hover:opacity-0">
                         {isImage ? (
                           <img
@@ -1256,11 +1256,9 @@ export const PromptInputSelectValue = ({
 export type PromptInputHoverCardProps = ComponentProps<typeof HoverCard>;
 
 export const PromptInputHoverCard = ({
-  openDelay = 0,
-  closeDelay = 0,
   ...props
 }: PromptInputHoverCardProps) => (
-  <HoverCard closeDelay={closeDelay} openDelay={openDelay} {...props} />
+  <HoverCard {...props} />
 );
 
 export type PromptInputHoverCardTriggerProps = ComponentProps<

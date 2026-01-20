@@ -84,7 +84,7 @@ export const MessageAction = ({
   ...props
 }: MessageActionProps) => {
   const button = (
-    <Button size={size} type="button" variant={variant} {...props}>
+    <Button size={size} variant={variant} {...props}>
       {children}
       <span className="sr-only">{label || tooltip}</span>
     </Button>
@@ -250,7 +250,6 @@ export const MessageBranchPrevious = ({
       disabled={totalBranches <= 1}
       onClick={goToPrevious}
       size="icon-sm"
-      type="button"
       variant="ghost"
       {...props}
     >
@@ -274,7 +273,6 @@ export const MessageBranchNext = ({
       disabled={totalBranches <= 1}
       onClick={goToNext}
       size="icon-sm"
-      type="button"
       variant="ghost"
       {...props}
     >
@@ -375,7 +373,7 @@ export function MessageAttachment({
       ) : (
         <>
           <Tooltip>
-            <TooltipTrigger render={<div className="flex size-full shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground" />} nativeButton={false}><PaperclipIcon className="size-4" /></TooltipTrigger>
+            <TooltipTrigger render={<div className="flex size-full shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground" />}><PaperclipIcon className="size-4" /></TooltipTrigger>
             <TooltipContent>
               <p>{attachmentLabel}</p>
             </TooltipContent>
