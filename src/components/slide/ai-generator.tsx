@@ -4,7 +4,7 @@ import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { nanoid } from 'nanoid'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ChatMessage } from '@/app/api/chat/route'
 import {
   Conversation,
@@ -64,6 +64,7 @@ function extractMessageText(message: ChatMessage): string {
 export function AIGenerator({ slideId }: AIGeneratorProps) {
   const [error, setError] = useState<string | null>(null)
   const selectedId = useAtomValue(selectedInfographicIdAtom)
+  const setSelectedId = useSetAtom(selectedInfographicIdAtom)
   const slide = useAtomValue(slideAtom)
   const updateInfographicContent = useSetAtom(updateInfographicContentAtom)
   const addInfographic = useSetAtom(addInfographicAtom)
@@ -134,6 +135,8 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
               title?: string
               syntax: string
             }
+            // 跳转到正在编辑的信息图，以便实时查看修改效果
+            setSelectedId(infographicId)
             updateInfographicContent({
               infographicId,
               content: syntax,
@@ -175,6 +178,120 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
     },
   })
 
+  // 用于跟踪已经跳转过的工具调用，避免重复跳转
+  const processedToolCallsRef = useRef<Set<string>>(new Set())
+  // 用于节流的上次执行时间
+  const lastExecuteTimeRef = useRef<number>(0)
+  // 用于确保最后一次更新被执行的 trailing timer
+  const trailingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // 存储最新的待更新内容
+  const pendingUpdateRef = useRef<{
+    infographicId: string
+    content: string
+  } | null>(null)
+
+  // 节流间隔时间（毫秒）
+  const THROTTLE_INTERVAL = 300
+
+  // 执行内容更新
+  const flushPendingUpdate = useCallback(() => {
+    if (pendingUpdateRef.current) {
+      updateInfographicContent(pendingUpdateRef.current)
+      pendingUpdateRef.current = null
+      lastExecuteTimeRef.current = Date.now()
+    }
+  }, [updateInfographicContent])
+
+  // 处理 editInfographic 工具调用的 streaming 更新（使用节流）
+  const handleEditInfographicStreaming = useCallback(
+    (
+      toolCallId: string,
+      input: { infographicId?: string; syntax?: string },
+      state: string
+    ) => {
+      // 检查是否已经处理过这个工具调用的跳转
+      const alreadyProcessed = processedToolCallsRef.current.has(toolCallId)
+
+      // 当有 infographicId 时，立即跳转到对应的信息图（不节流）
+      if (input.infographicId && !alreadyProcessed) {
+        setSelectedId(input.infographicId)
+        processedToolCallsRef.current.add(toolCallId)
+      }
+
+      // 如果有 syntax，使用节流更新内容（streaming 过程中）
+      if (input.infographicId && input.syntax && state === 'input-streaming') {
+        // 存储最新的待更新内容
+        pendingUpdateRef.current = {
+          infographicId: input.infographicId,
+          content: input.syntax,
+        }
+
+        const now = Date.now()
+        const timeSinceLastExecute = now - lastExecuteTimeRef.current
+
+        // 清除之前的 trailing timer
+        if (trailingTimerRef.current) {
+          clearTimeout(trailingTimerRef.current)
+          trailingTimerRef.current = null
+        }
+
+        if (timeSinceLastExecute >= THROTTLE_INTERVAL) {
+          // 如果距离上次执行超过间隔时间，立即执行
+          flushPendingUpdate()
+        } else {
+          // 否则设置 trailing timer，确保最后一次更新被执行
+          const remainingTime = THROTTLE_INTERVAL - timeSinceLastExecute
+          trailingTimerRef.current = setTimeout(() => {
+            flushPendingUpdate()
+            trailingTimerRef.current = null
+          }, remainingTime)
+        }
+      }
+    },
+    [setSelectedId, flushPendingUpdate]
+  )
+
+  // 清理 trailing timer
+  useEffect(() => {
+    return () => {
+      if (trailingTimerRef.current) {
+        clearTimeout(trailingTimerRef.current)
+      }
+    }
+  }, [])
+
+  // 监听 messages 变化，在 streaming 过程中实时更新对应信息图
+  useEffect(() => {
+    if (status !== 'streaming') {
+      return
+    }
+
+    const lastMessage = messages.at(-1)
+    if (!lastMessage || lastMessage.role !== 'assistant') {
+      return
+    }
+
+    for (const part of lastMessage.parts) {
+      if (!part.type.startsWith('tool-editInfographic')) {
+        continue
+      }
+
+      const toolPart = part as {
+        toolCallId: string
+        state: string
+        input?: { infographicId?: string; syntax?: string }
+      }
+
+      if (toolPart.input) {
+        handleEditInfographicStreaming(
+          toolPart.toolCallId,
+          toolPart.input,
+          toolPart.state
+        )
+      }
+    }
+  }, [messages, status, handleEditInfographicStreaming])
+
   // 监听错误状态
   useEffect(() => {
     if (status === 'error') {
@@ -182,6 +299,21 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
       setError(errorMessage)
     }
   }, [status, chatError])
+
+  // 当 status 变为 ready 时，清空已处理的工具调用记录并刷新待更新内容
+  useEffect(() => {
+    if (status === 'ready') {
+      // 清除 trailing timer 并立即刷新任何待更新的内容
+      if (trailingTimerRef.current) {
+        clearTimeout(trailingTimerRef.current)
+        trailingTimerRef.current = null
+      }
+      flushPendingUpdate()
+      processedToolCallsRef.current.clear()
+      // 重置上次执行时间
+      lastExecuteTimeRef.current = 0
+    }
+  }, [status, flushPendingUpdate])
 
   const handleSubmit = (message: PromptInputMessage) => {
     const trimmedInput = message.text.trim()
