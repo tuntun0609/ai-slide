@@ -1,4 +1,3 @@
-import { Coins } from 'lucide-react'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { SlideSidebar } from '@/components/slide/app-sidebar'
@@ -57,12 +56,12 @@ export default async function SlideLayout({
             </Button> */}
 
             <ThemeToggle />
-            <div className="flex items-center gap-2 rounded-full border bg-background px-2.5 py-1 shadow-sm">
+            {/* <div className="flex items-center gap-2 rounded-full border bg-background px-2.5 py-1 shadow-sm">
               <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
                 <Coins className="h-3.5 w-3.5 text-primary" />
               </div>
               <span className="font-semibold text-sm">5.00</span>
-            </div>
+            </div> */}
             <UserButton className="ml-1" showName={false} />
           </div>
         </header>
