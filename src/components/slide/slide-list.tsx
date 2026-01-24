@@ -1,26 +1,45 @@
 'use client'
 
+import { formatDistanceToNow } from 'date-fns'
+import { zhCN } from 'date-fns/locale'
 import {
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  Loader2,
+  LayoutTemplate,
+  MoreHorizontal,
   Plus,
   Search,
+  Trash2,
+  Type,
 } from 'lucide-react'
-import type { Variants } from 'motion/react'
 import { motion } from 'motion/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition } from 'react'
-import { createSlide } from '@/actions/slide'
+import { toast } from 'sonner'
+import { createSlide, deleteSlide, updateSlide } from '@/actions/slide'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import type { slide } from '@/db/schema'
 import { Link } from '@/i18n/navigation'
@@ -43,18 +62,22 @@ export function SlideList({
 }: SlideListProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get('search') || ''
   )
-  const [isPending, startTransition] = useTransition()
 
   const handleCreateSlide = () => {
     startTransition(async () => {
-      await createSlide()
+      try {
+        await createSlide()
+      } catch {
+        toast.error('创建失败')
+      }
     })
   }
 
-  // 同步 URL 参数到本地状态
+  // Sync URL params to local state
   useEffect(() => {
     setSearchQuery(searchParams.get('search') || '')
   }, [searchParams])
@@ -65,7 +88,7 @@ export function SlideList({
       const params = new URLSearchParams(searchParams.toString())
       if (value.trim()) {
         params.set('search', value.trim())
-        params.delete('page') // 搜索时重置到第一页
+        params.delete('page')
       } else {
         params.delete('search')
       }
@@ -77,225 +100,257 @@ export function SlideList({
     [router, searchParams]
   )
 
-  const handlePageChange = (page: number) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (page === 1) {
-      params.delete('page')
-    } else {
-      params.set('page', String(page))
-    }
-    const newUrl = params.toString() ? `/slide?${params.toString()}` : '/slide'
-    router.push(newUrl)
-  }
-
-  const formatDate = (date: Date | null) => {
-    if (!date) {
-      return ''
-    }
-    return new Intl.DateTimeFormat('zh-CN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(date))
-  }
-
-  // hover 动画变体
-  const hoverVariants: Variants = {
-    rest: {
-      scale: 1,
-      transition: {
-        duration: 0.2,
-        ease: 'easeOut',
-      },
-    },
-    hover: {
-      scale: 1.05,
-      transition: {
-        duration: 0.2,
-        ease: 'easeOut',
-      },
-    },
-  }
-
   return (
-    <div className="flex h-full flex-col overflow-hidden">
-      {/* 工具栏 */}
-      <div className="border-b-0 bg-background px-6 py-4">
-        <div className="flex items-center justify-between gap-4">
-          {/* 搜索栏 */}
-          <div className="relative max-w-md flex-1">
-            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+    <div className="flex h-full flex-col bg-background/50">
+      {/* Minimalist Header */}
+      <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-8 py-6 backdrop-blur-xl">
+        <div className="flex items-center gap-4">
+          <h1 className="font-medium text-xl tracking-tight">我的演示</h1>
+          <span className="rounded-full bg-muted px-2.5 py-0.5 font-medium text-muted-foreground text-xs">
+            {totalCount}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="group relative">
+            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-hover:text-foreground" />
             <Input
-              className="pl-9"
+              className="h-9 w-64 rounded-full bg-muted/50 pl-9 transition-all hover:bg-muted focus:w-80 focus:bg-background"
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="搜索 slide..."
+              placeholder="搜索..."
               value={searchQuery}
             />
           </div>
-          {/* 新建按钮 */}
           <Button
-            className="gap-2"
+            className="h-9 rounded-full px-4 font-medium transition-all hover:scale-105 active:scale-95"
             disabled={isPending}
             onClick={handleCreateSlide}
           >
-            {isPending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Plus className="size-4" />
-            )}
-            新建 Slide
+            <Plus className="mr-2 size-4" />
+            新建
           </Button>
         </div>
-      </div>
+      </header>
 
-      {/* 列表内容 */}
-      {slides.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8">
-          <motion.div
-            className="flex size-16 items-center justify-center rounded-full bg-muted"
-            initial="rest"
-            variants={hoverVariants}
-            whileHover="hover"
-          >
-            <FileText className="size-8 text-muted-foreground" />
-          </motion.div>
-          <div className="flex flex-col items-center gap-2 text-center">
-            <motion.h3
-              className="font-semibold text-lg"
-              initial="rest"
-              variants={hoverVariants}
-              whileHover="hover"
-            >
-              还没有创建任何 Slide
-            </motion.h3>
-            <motion.p
-              className="text-muted-foreground text-sm"
-              initial="rest"
-              variants={hoverVariants}
-              whileHover="hover"
-            >
-              点击上方的 "新建 Slide" 按钮开始创建你的第一个 Slide
-            </motion.p>
-          </div>
-        </div>
-      ) : (
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h1 className="font-semibold text-2xl">My Slides</h1>
-              <p className="mt-1 text-muted-foreground text-sm">
-                共 {totalCount} 个 Slide
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {slides.map((slideItem) => (
-              <Link href={`/slide/${slideItem.id}`} key={slideItem.id}>
-                <Card className="group/card h-full transition-all hover:shadow-md">
-                  <CardHeader>
-                    <CardTitle className="line-clamp-2">
-                      {slideItem.title}
-                    </CardTitle>
-                    <CardDescription>
-                      {slideItem.infographics.length} 个信息图
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-muted-foreground text-xs">
-                      <div>创建于 {formatDate(slideItem.createdAt)}</div>
-                      {slideItem.updatedAt &&
-                        slideItem.updatedAt.getTime() !==
-                          slideItem.createdAt.getTime() && (
-                          <div className="mt-1">
-                            更新于 {formatDate(slideItem.updatedAt)}
-                          </div>
-                        )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+      {/* Content Area */}
+      <main className="flex-1 overflow-y-auto p-8">
+        {slides.length === 0 ? (
+          <EmptyState isPending={isPending} onCreate={handleCreateSlide} />
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            {slides.map((slide) => (
+              <SlideCard key={slide.id} slide={slide} />
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </main>
 
-      {/* 分页控件 */}
+      {/* Minimalist Pagination */}
       {totalPages > 1 && (
-        <div className="border-t bg-background px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="text-muted-foreground text-sm">
-              第 {currentPage} / {totalPages} 页
-            </div>
-            <div className="flex items-center gap-2">
+        <footer className="flex justify-center border-t bg-background/50 py-4 backdrop-blur-sm">
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <Button
-                disabled={currentPage === 1}
-                onClick={() => handlePageChange(currentPage - 1)}
-                size="sm"
-                variant="outline"
-              >
-                <ChevronLeft className="size-4" />
-                上一页
-              </Button>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => {
-                    // 只显示当前页附近和首尾的页码
-                    const showPage =
-                      page === 1 ||
-                      page === totalPages ||
-                      (page >= currentPage - 1 && page <= currentPage + 1)
-
-                    if (!showPage) {
-                      // 显示省略号
-                      if (
-                        page === currentPage - 2 ||
-                        page === currentPage + 2
-                      ) {
-                        return (
-                          <span
-                            className="px-2 text-muted-foreground text-sm"
-                            key={page}
-                          >
-                            ...
-                          </span>
-                        )
-                      }
-                      return null
-                    }
-
-                    return (
-                      <Button
-                        className={cn(
-                          'min-w-10',
-                          page === currentPage && 'pointer-events-none'
-                        )}
-                        key={page}
-                        onClick={() => handlePageChange(page)}
-                        size="sm"
-                        variant={page === currentPage ? 'default' : 'ghost'}
-                      >
-                        {page}
-                      </Button>
-                    )
-                  }
+                className={cn(
+                  'h-8 w-8 rounded-full p-0 font-normal',
+                  currentPage === page &&
+                    'bg-foreground text-background hover:bg-foreground/90'
                 )}
-              </div>
-              <Button
-                disabled={currentPage === totalPages}
-                onClick={() => handlePageChange(currentPage + 1)}
+                key={page}
+                onClick={() => {
+                  const params = new URLSearchParams(searchParams.toString())
+                  params.set('page', String(page))
+                  router.push(`/slide?${params.toString()}`)
+                }}
                 size="sm"
-                variant="outline"
+                variant={currentPage === page ? 'secondary' : 'ghost'}
               >
-                下一页
-                <ChevronRight className="size-4" />
+                {page}
               </Button>
-            </div>
+            ))}
+          </div>
+        </footer>
+      )}
+    </div>
+  )
+}
+
+function SlideCard({ slide }: { slide: Slide }) {
+  const [isRenameOpen, setIsRenameOpen] = useState(false)
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [newName, setNewName] = useState(slide.title)
+  const [isPending, startTransition] = useTransition()
+
+  const handleRename = () => {
+    if (!newName.trim() || newName === slide.title) {
+      setIsRenameOpen(false)
+      return
+    }
+
+    startTransition(async () => {
+      try {
+        await updateSlide(slide.id, { title: newName })
+        setIsRenameOpen(false)
+        toast.success('重命名成功')
+      } catch {
+        toast.error('重命名失败')
+      }
+    })
+  }
+
+  const handleDelete = () => {
+    startTransition(async () => {
+      try {
+        await deleteSlide(slide.id)
+        setIsDeleteOpen(false)
+        toast.success('删除成功')
+      } catch {
+        toast.error('删除失败')
+      }
+    })
+  }
+
+  return (
+    <>
+      <motion.div
+        animate={{ opacity: 1, y: 0 }}
+        className="group relative flex aspect-4/3 flex-col overflow-hidden rounded-xl border bg-card transition-all hover:border-foreground/20 hover:shadow-lg"
+        initial={{ opacity: 0, y: 20 }}
+        layout
+      >
+        <Link className="flex-1 cursor-pointer" href={`/slide/${slide.id}`}>
+          <div className="flex h-full w-full flex-col items-center justify-center bg-muted/30 p-6 transition-colors group-hover:bg-muted/50">
+            <LayoutTemplate className="size-12 text-muted-foreground/20 transition-transform duration-500 group-hover:scale-110 group-hover:text-muted-foreground/40" />
+          </div>
+        </Link>
+
+        <div className="absolute top-3 right-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex h-8 w-8 items-center justify-center rounded-full bg-background/80 backdrop-blur-sm transition-colors hover:bg-background">
+              <MoreHorizontal className="size-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem onClick={() => setIsRenameOpen(true)}>
+                <Type className="mr-2 size-4" />
+                重命名
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => setIsDeleteOpen(true)}
+              >
+                <Trash2 className="mr-2 size-4" />
+                删除
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div className="flex flex-col gap-1 border-t bg-background p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="truncate font-medium text-sm" title={slide.title}>
+              {slide.title}
+            </h3>
+          </div>
+          <div className="flex items-center justify-between text-muted-foreground text-xs">
+            <span>{slide.infographics?.length || 0} 页</span>
+            <span>
+              {formatDistanceToNow(slide.updatedAt || slide.createdAt, {
+                addSuffix: true,
+                locale: zhCN,
+              })}
+            </span>
           </div>
         </div>
-      )}
+      </motion.div>
+
+      <Dialog onOpenChange={setIsRenameOpen} open={isRenameOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>重命名演示文稿</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              autoFocus
+              className="col-span-3"
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleRename()
+                }
+              }}
+              placeholder="输入新的名称"
+              value={newName}
+            />
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsRenameOpen(false)} variant="outline">
+              取消
+            </Button>
+            <Button disabled={isPending} onClick={handleRename}>
+              保存
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog onOpenChange={setIsDeleteOpen} open={isDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除？</AlertDialogTitle>
+            <AlertDialogDescription>
+              此操作无法撤销。这将永久删除 "{slide.title}" 及其所有内容。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isPending}
+              onClick={handleDelete}
+            >
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
+}
+
+function EmptyState({
+  onCreate,
+  isPending,
+}: {
+  onCreate: () => void
+  isPending: boolean
+}) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center text-center">
+      <motion.div
+        animate={{ scale: 1, opacity: 1 }}
+        className="flex flex-col items-center gap-4"
+        initial={{ scale: 0.9, opacity: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex size-20 items-center justify-center rounded-3xl bg-muted/30">
+          <LayoutTemplate className="size-10 text-muted-foreground/50" />
+        </div>
+        <div className="space-y-1">
+          <h3 className="font-medium text-lg">开始你的创作</h3>
+          <p className="max-w-xs text-muted-foreground text-sm">
+            创建一个新的演示文稿，开始你的精彩演讲。
+          </p>
+        </div>
+        <Button
+          className="mt-4 rounded-full px-8"
+          disabled={isPending}
+          onClick={onCreate}
+        >
+          <Plus className="mr-2 size-4" />
+          新建演示
+        </Button>
+      </motion.div>
     </div>
   )
 }
