@@ -1,4 +1,4 @@
-import { Clock, FileText, FolderRoot, LayoutGrid, Search } from 'lucide-react'
+import { Clock, FileText, FolderRoot, Search } from 'lucide-react'
 import type * as React from 'react'
 import { LogoIcon } from '@/components/logo'
 import { buttonVariants } from '@/components/ui/button'
@@ -35,9 +35,9 @@ export function SlideSidebar({
               buttonVariants({ variant: 'outline' }),
               'h-10 w-full justify-center gap-2 rounded-xl border bg-background font-medium text-foreground shadow-sm hover:bg-muted'
             )}
-            href="/chat"
+            href="/slide"
           >
-            New Chat
+            New Slide
           </Link>
         </div>
       </SidebarHeader>
@@ -55,25 +55,19 @@ export function SlideSidebar({
               <SidebarMenuItem>
                 <SidebarMenuButton className="py-2.5">
                   <FolderRoot className="size-4 text-muted-foreground" />
-                  <span className="font-medium text-sm">Projects</span>
+                  <span className="font-medium text-sm">Slides</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton className="py-2.5">
                   <Clock className="size-4 text-muted-foreground" />
-                  <span className="font-medium text-sm">Recent Chats</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="py-2.5">
-                  <LayoutGrid className="size-4 text-muted-foreground" />
-                  <span className="font-medium text-sm">Design Systems</span>
+                  <span className="font-medium text-sm">Recent Slides</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton className="py-2.5">
                   <FileText className="size-4 text-muted-foreground" />
-                  <span className="font-medium text-sm">Templates</span>
+                  <span className="font-medium text-sm">Find More</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
