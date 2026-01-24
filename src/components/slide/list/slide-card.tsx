@@ -1,9 +1,11 @@
 'use client'
 
+import { Infographic } from '@antv/infographic'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { LayoutTemplate } from 'lucide-react'
 import { motion } from 'motion/react'
+import Image from 'next/image'
+import { useEffect, useRef } from 'react'
 import type { slide } from '@/db/schema'
 import { Link } from '@/i18n/navigation'
 import { SlideCardMenu } from './slide-card-menu'
@@ -14,7 +16,52 @@ interface SlideCardProps {
   slide: Slide
 }
 
+function InfographicPreview({ content }: { content: string }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const infographicInstanceRef = useRef<Infographic | null>(null)
+
+  useEffect(() => {
+    if (!(containerRef.current && content)) {
+      return
+    }
+
+    const cleanup = () => {
+      if (infographicInstanceRef.current) {
+        infographicInstanceRef.current.destroy()
+        infographicInstanceRef.current = null
+      }
+    }
+
+    cleanup()
+    containerRef.current.innerHTML = ''
+
+    try {
+      const infographic = new Infographic({
+        container: containerRef.current,
+        width: '100%',
+        height: '100%',
+      })
+      infographic.render(content)
+      infographicInstanceRef.current = infographic
+    } catch (error) {
+      console.error('Failed to render infographic preview:', error)
+    }
+
+    return cleanup
+  }, [content])
+
+  return (
+    <div
+      className="relative h-full w-full overflow-hidden"
+      ref={containerRef}
+    />
+  )
+}
+
 export function SlideCard({ slide }: SlideCardProps) {
+  const firstInfographic = slide.infographics?.[0]
+  const hasInfographic = firstInfographic?.content?.trim()
+
   return (
     <motion.div
       animate={{ opacity: 1 }}
@@ -22,9 +69,24 @@ export function SlideCard({ slide }: SlideCardProps) {
       initial={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <Link className="flex-1 cursor-pointer" href={`/slide/${slide.id}`}>
-        <div className="flex h-full w-full flex-col items-center justify-center bg-muted/30 p-6 transition-colors group-hover:bg-muted/50">
-          <LayoutTemplate className="size-12 text-muted-foreground/20" />
+      <Link
+        className="flex-1 cursor-pointer overflow-hidden"
+        href={`/slide/${slide.id}`}
+      >
+        <div className="relative flex h-full w-full items-center justify-center bg-muted/30 transition-colors group-hover:bg-muted/50">
+          {hasInfographic && firstInfographic ? (
+            <InfographicPreview content={firstInfographic.content} />
+          ) : (
+            <div className="flex items-center justify-center p-6">
+              <Image
+                alt="信息图图标"
+                className="size-12 opacity-20"
+                height={48}
+                src="/infographic.svg"
+                width={48}
+              />
+            </div>
+          )}
         </div>
       </Link>
 

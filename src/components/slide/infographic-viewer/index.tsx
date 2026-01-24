@@ -2,7 +2,17 @@
 
 import { useAtomValue, useSetAtom } from 'jotai'
 import { nanoid } from 'nanoid'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from 'react'
+import { toast } from 'sonner'
+import { updateSlide } from '@/actions/slide'
+import { Button } from '@/components/ui/button'
 import {
   addInfographicAtom,
   deleteInfographicAtom,
@@ -28,6 +38,7 @@ export function InfographicViewer({ slideId }: InfographicViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isPending, startTransition] = useTransition()
 
   // 计算当前索引和总数
   const { currentIndex, totalCount } = useMemo(() => {
@@ -168,6 +179,25 @@ export function InfographicViewer({ slideId }: InfographicViewerProps) {
     setIsFullscreen(!!document.fullscreenElement)
   }, [])
 
+  // 保存当前 slide 数据到数据库
+  const handleSave = useCallback(() => {
+    if (!slide) {
+      return
+    }
+
+    startTransition(async () => {
+      try {
+        await updateSlide(slideId, {
+          infographics: slide.infographics,
+        })
+        toast.success('保存成功')
+      } catch (error) {
+        toast.error('保存失败')
+        console.error('Failed to save slide:', error)
+      }
+    })
+  }, [slide, slideId])
+
   useEffect(() => {
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => {
@@ -182,6 +212,17 @@ export function InfographicViewer({ slideId }: InfographicViewerProps) {
       }`}
       ref={wrapperRef}
     >
+      {/* Header */}
+      <div className="flex h-14 shrink-0 items-center border-b bg-background px-4 py-2">
+        <Button
+          disabled={isPending || !slide}
+          onClick={handleSave}
+          size="sm"
+          variant="default"
+        >
+          {isPending ? '保存中...' : 'Save'}
+        </Button>
+      </div>
       <div
         className={`flex min-h-0 flex-1 items-center justify-center overflow-hidden ${
           isFullscreen ? 'p-4' : 'p-8'

@@ -108,7 +108,7 @@ export function SlidePanels({
             <InfographicViewer slideId={slideId} />
             {isCollapsed && (
               <Button
-                className="absolute top-2 right-2 z-10 h-8 w-8"
+                className="absolute top-2 right-2 z-10 h-10 w-8"
                 onClick={toggleCollapse}
                 size="icon"
                 variant="ghost"
@@ -146,7 +146,7 @@ export function SlidePanels({
                 onValueChange={handleTabChange}
                 value={currentTab}
               >
-                <div className="flex items-center justify-between border-b p-2 px-4">
+                <div className="flex h-14 items-center justify-between border-b p-2 px-4">
                   <TabsList className="h-auto bg-transparent p-0">
                     <TabsTrigger
                       className="data-active:bg-transparent data-active:shadow-none"
