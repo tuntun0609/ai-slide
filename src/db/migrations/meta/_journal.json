@@ -15,6 +15,13 @@
       "when": 1767433731170,
       "tag": "0001_clear_rockslide",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769261584287,
+      "tag": "0002_zippy_sinister_six",
+      "breakpoints": true
     }
   ]
 }
