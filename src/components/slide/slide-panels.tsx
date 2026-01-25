@@ -2,7 +2,7 @@
 
 import { useSetAtom } from 'jotai'
 import Cookies from 'js-cookie'
-import { PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { PanelRightClose } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import type { Layout, PanelImperativeHandle } from 'react-resizable-panels'
@@ -100,22 +100,16 @@ export function SlidePanels({
         orientation="horizontal"
       >
         <Panel
-          className="overflow-hidden rounded-xl border bg-card shadow-xs"
+          className="flex flex-col overflow-hidden rounded-xl border bg-card shadow-xs"
           defaultSize={70}
           minSize={30}
         >
-          <div className="relative h-full">
-            <InfographicViewer slideId={slideId} />
-            {isCollapsed && (
-              <Button
-                className="absolute top-2 right-2 z-10 h-10 w-8"
-                onClick={toggleCollapse}
-                size="icon"
-                variant="ghost"
-              >
-                <PanelRightOpen className="h-4 w-4" />
-              </Button>
-            )}
+          <div className="relative min-h-0 flex-1">
+            <InfographicViewer
+              isRightPanelCollapsed={isCollapsed}
+              onToggleRightPanel={toggleCollapse}
+              slideId={slideId}
+            />
           </div>
         </Panel>
 
