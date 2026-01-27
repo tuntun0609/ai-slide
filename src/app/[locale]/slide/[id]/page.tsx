@@ -20,7 +20,6 @@ export default async function SlideIdPage({
   }
 
   const { id } = await params
-  const api = await cookies()
 
   // 从数据库加载 slide 数据
   const slideData = await db.query.slide.findFirst({
@@ -32,7 +31,11 @@ export default async function SlideIdPage({
     notFound()
   }
 
-  const defaultLayoutString = api.get(RESIZABLE_PANELS_COOKIE_NAME)?.value
+  const cookieStore = await cookies()
+
+  const defaultLayoutString = cookieStore.get(
+    RESIZABLE_PANELS_COOKIE_NAME
+  )?.value
   const defaultLayout = defaultLayoutString
     ? (JSON.parse(defaultLayoutString) as Layout)
     : undefined
