@@ -1,6 +1,6 @@
 'use client'
 
-import { useSetAtom } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import Cookies from 'js-cookie'
 import { PanelRightClose } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -32,26 +32,46 @@ export function SlidePanels({
 }) {
   const panelRef = useRef<PanelImperativeHandle>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const router = useRouter()
+  const pathname = usePathname()
   const setSlide = useSetAtom(slideAtom)
   const setSelectedInfographicId = useSetAtom(selectedInfographicIdAtom)
   const setEditingContent = useSetAtom(editingInfographicContentAtom)
-  const router = useRouter()
-  const pathname = usePathname()
+  const selectedInfographicId = useAtomValue(selectedInfographicIdAtom)
+  const lastSlideIdRef = useRef<string | null>(null)
   const searchParams = useSearchParams()
-  const currentTab = searchParams.get('tab') || 'editor'
+  const [currentTab, setCurrentTab] = useState<'editor' | 'ai'>('editor')
 
   // 初始化 slide 数据
   useEffect(() => {
-    if (initialSlideData) {
-      setSlide(initialSlideData)
-      // 如果有 infographics，默认选中第一个
-      if (initialSlideData.infographics.length > 0) {
-        const firstInfographic = initialSlideData.infographics[0]
-        setSelectedInfographicId(firstInfographic.id)
-        setEditingContent(firstInfographic.content)
-      }
+    if (!initialSlideData) {
+      return
     }
-  }, [initialSlideData, setSlide, setSelectedInfographicId, setEditingContent])
+    setSlide(initialSlideData)
+
+    const isSlideChanged = lastSlideIdRef.current !== slideId
+    const shouldInitSelection = !selectedInfographicId || isSlideChanged
+
+    if (shouldInitSelection && initialSlideData.infographics.length > 0) {
+      const firstInfographic = initialSlideData.infographics[0]
+      setSelectedInfographicId(firstInfographic.id)
+      setEditingContent(firstInfographic.content)
+    }
+
+    lastSlideIdRef.current = slideId
+  }, [
+    initialSlideData,
+    selectedInfographicId,
+    setSlide,
+    setSelectedInfographicId,
+    setEditingContent,
+    slideId,
+  ])
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    setCurrentTab(tab === 'ai' ? 'ai' : 'editor')
+  }, [searchParams])
 
   const onLayoutChange = (layout: Layout) => {
     Cookies.set(RESIZABLE_PANELS_COOKIE_NAME, JSON.stringify(layout))
@@ -69,17 +89,18 @@ export function SlidePanels({
   }
 
   const handleTabChange = (value: string) => {
+    const nextTab = value === 'ai' ? 'ai' : 'editor'
+    setCurrentTab(nextTab)
+
     const params = new URLSearchParams(searchParams.toString())
-    if (value === 'editor') {
-      // 如果切换到默认值，移除 searchParams
+    if (nextTab === 'editor') {
       params.delete('tab')
     } else {
-      params.set('tab', value)
+      params.set('tab', nextTab)
     }
-    const newUrl = params.toString()
-      ? `${pathname}?${params.toString()}`
-      : pathname
-    router.push(newUrl)
+    const query = params.toString()
+    const newUrl = query ? `${pathname}?${query}` : pathname
+    router.replace(newUrl)
   }
 
   const handleSeparatorClick = () => {
@@ -164,10 +185,14 @@ export function SlidePanels({
                     <PanelRightClose className="h-4 w-4" />
                   </Button>
                 </div>
-                <TabsContent className="min-h-0 flex-1" value="editor">
+                <TabsContent
+                  className="min-h-0 flex-1"
+                  keepMounted
+                  value="editor"
+                >
                   <InfographicEditor slideId={slideId} />
                 </TabsContent>
-                <TabsContent className="min-h-0 flex-1" value="ai">
+                <TabsContent className="min-h-0 flex-1" keepMounted value="ai">
                   <AIGenerator slideId={slideId} />
                 </TabsContent>
               </Tabs>
