@@ -3,7 +3,7 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import Cookies from 'js-cookie'
 import { PanelRightClose } from 'lucide-react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import type { Layout, PanelImperativeHandle } from 'react-resizable-panels'
 import { Group, Panel, Separator } from 'react-resizable-panels'
@@ -32,7 +32,6 @@ export function SlidePanels({
 }) {
   const panelRef = useRef<PanelImperativeHandle>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const router = useRouter()
   const pathname = usePathname()
   const setSlide = useSetAtom(slideAtom)
   const setSelectedInfographicId = useSetAtom(selectedInfographicIdAtom)
@@ -40,7 +39,10 @@ export function SlidePanels({
   const selectedInfographicId = useAtomValue(selectedInfographicIdAtom)
   const lastSlideIdRef = useRef<string | null>(null)
   const searchParams = useSearchParams()
-  const [currentTab, setCurrentTab] = useState<'editor' | 'ai'>('editor')
+  const [currentTab, setCurrentTab] = useState<'editor' | 'ai'>(() => {
+    const tab = searchParams.get('tab')
+    return tab === 'ai' ? 'ai' : 'editor'
+  })
 
   // 初始化 slide 数据
   useEffect(() => {
@@ -92,6 +94,7 @@ export function SlidePanels({
     const nextTab = value === 'ai' ? 'ai' : 'editor'
     setCurrentTab(nextTab)
 
+    // 使用 window.history.replaceState 更新 URL，避免触发 Next.js 路由导航和服务器重新渲染
     const params = new URLSearchParams(searchParams.toString())
     if (nextTab === 'editor') {
       params.delete('tab')
@@ -100,7 +103,8 @@ export function SlidePanels({
     }
     const query = params.toString()
     const newUrl = query ? `${pathname}?${query}` : pathname
-    router.replace(newUrl)
+    // 直接使用浏览器 API 更新 URL，不触发 Next.js 路由导航
+    window.history.replaceState(null, '', newUrl)
   }
 
   const handleSeparatorClick = () => {
