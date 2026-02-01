@@ -51,6 +51,9 @@
         "noNamespaceImport": "off",
         "noBarrelFile": "off",
         "noImgElement": "off"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "warn"
       }
     }
   }

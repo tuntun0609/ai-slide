@@ -4,4 +4,6 @@ export const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
 })
 
-export const defaultModel = openrouter('openai/gpt-5.2')
+export const chatgptModel = openrouter.chat('openai/gpt-5.2')
+
+export const kimiModel = openrouter.chat('moonshotai/kimi-k2.5')

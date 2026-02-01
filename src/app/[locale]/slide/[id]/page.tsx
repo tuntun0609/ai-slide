@@ -11,6 +11,8 @@ import { slide } from '@/db/schema'
 import { getSession } from '@/lib/auth'
 import { RESIZABLE_PANELS_COOKIE_NAME } from '@/type'
 
+import 'jotai-devtools/styles.css'
+
 // 使用 cache 避免在 generateMetadata 和页面组件中重复查询
 const getSlideData = cache(async (id: string) => {
   return await db.query.slide.findFirst({
@@ -77,6 +79,7 @@ export default async function SlideIdPage({
 
   return (
     <JotaiProvider>
+      {/* <JotaiDevTools /> */}
       <SlidePanels
         defaultLayout={defaultLayout}
         initialSlideData={{

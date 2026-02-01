@@ -81,10 +81,15 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
         body: {
           chatId: tempChatId,
           infographics: slide?.infographics ?? [], // 传递当前 slide 的所有信息图数据
+          selectedInfographicId: selectedId ?? undefined, // 传递当前选中的信息图 ID
         },
       }),
-    [tempChatId, slide?.infographics]
+    [tempChatId, slide?.infographics, selectedId]
   )
+
+  useEffect(() => {
+    console.log(slide)
+  }, [slide])
 
   const {
     messages,
@@ -96,37 +101,63 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
     transport,
     id: tempChatId,
     onToolCall: ({ toolCall }) => {
+      console.log('[onToolCall] triggered:', toolCall)
+
       // 检查是否是动态工具
-      if ('dynamic' in toolCall && toolCall.dynamic) {
+      if (toolCall.dynamic) {
+        console.log('[onToolCall] skipping dynamic tool')
         return
       }
 
-      const { toolName, toolCallId, input } = toolCall as {
-        toolName: string
-        toolCallId: string
-        input: Record<string, unknown>
-      }
+      const { toolName, toolCallId, input } = toolCall
+      console.log('[onToolCall] processing:', { toolName, toolCallId, input })
 
       try {
         switch (toolName) {
           case 'createInfographic': {
-            const { title, syntax } = input as {
-              title: string
-              syntax: string
+            console.log('[createInfographic] input:', input)
+            const typedInput = input as {
+              title?: string
+              syntax?: string
+            }
+            const title = typedInput.title ?? '未命名信息图'
+            const syntax = typedInput.syntax
+            if (!syntax) {
+              console.error('[createInfographic] missing syntax in input')
+              addToolOutput({
+                tool: 'createInfographic',
+                toolCallId,
+                state: 'output-error',
+                errorText: '缺少 syntax 参数',
+              })
+              break
             }
             const newId = nanoid()
+            // 如果当前批次中已经创建了信息图，使用最后创建的ID作为afterId
+            // 否则使用当前选中的ID
+            const afterId =
+              lastCreatedInfographicIdRef.current ?? selectedId ?? null
+            console.log('[createInfographic] creating:', {
+              newId,
+              afterId,
+              syntax: `${syntax.substring(0, 100)}...`,
+            })
             addInfographic({
               infographic: {
                 id: newId,
                 content: syntax,
               },
-              afterId: selectedId,
+              afterId,
             })
+            // 更新最后创建的信息图ID，以便后续创建操作使用
+            lastCreatedInfographicIdRef.current = newId
+            console.log('[createInfographic] calling addToolOutput')
             addToolOutput({
               tool: 'createInfographic',
               toolCallId,
               output: { success: true, id: newId, title },
             })
+            console.log('[createInfographic] done')
             break
           }
           case 'editInfographic': {
@@ -189,6 +220,8 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
     infographicId: string
     content: string
   } | null>(null)
+  // 用于跟踪当前批次中最后创建的信息图ID，确保多个创建操作按顺序插入
+  const lastCreatedInfographicIdRef = useRef<string | null>(null)
 
   // 节流间隔时间（毫秒）
   const THROTTLE_INTERVAL = 300
@@ -312,6 +345,8 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
       processedToolCallsRef.current.clear()
       // 重置上次执行时间
       lastExecuteTimeRef.current = 0
+      // 重置最后创建的信息图ID，为下一批工具调用做准备
+      lastCreatedInfographicIdRef.current = null
     }
   }, [status, flushPendingUpdate])
 

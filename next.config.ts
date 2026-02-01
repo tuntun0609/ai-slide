@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
     ],
   },
   reactCompiler: true,
+  transpilePackages: ['jotai-devtools'],
 }
 
 export default withMiddlewares(nextConfig, [withNextIntl])

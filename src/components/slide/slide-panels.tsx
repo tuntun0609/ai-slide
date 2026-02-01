@@ -1,6 +1,7 @@
 'use client'
 
-import { useAtomValue, useSetAtom } from 'jotai'
+import { useSetAtom } from 'jotai'
+import { DevTools as JotaiDevTools } from 'jotai-devtools'
 import Cookies from 'js-cookie'
 import { PanelRightClose } from 'lucide-react'
 import { usePathname, useSearchParams } from 'next/navigation'
@@ -21,6 +22,8 @@ import { AIGenerator } from './editor/ai-generator'
 import { InfographicEditor } from './editor/infographic-editor'
 import { InfographicViewer } from './infographic-viewer'
 
+import 'jotai-devtools/styles.css'
+
 export function SlidePanels({
   slideId,
   defaultLayout,
@@ -36,7 +39,6 @@ export function SlidePanels({
   const setSlide = useSetAtom(slideAtom)
   const setSelectedInfographicId = useSetAtom(selectedInfographicIdAtom)
   const setEditingContent = useSetAtom(editingInfographicContentAtom)
-  const selectedInfographicId = useAtomValue(selectedInfographicIdAtom)
   const lastSlideIdRef = useRef<string | null>(null)
   const searchParams = useSearchParams()
   const [currentTab, setCurrentTab] = useState<'editor' | 'ai'>(() => {
@@ -44,26 +46,28 @@ export function SlidePanels({
     return tab === 'ai' ? 'ai' : 'editor'
   })
 
-  // 初始化 slide 数据
+  // 初始化 slide 数据 - 只在 slideId 或 initialSlideData 变化时运行
   useEffect(() => {
     if (!initialSlideData) {
       return
     }
-    setSlide(initialSlideData)
 
     const isSlideChanged = lastSlideIdRef.current !== slideId
-    const shouldInitSelection = !selectedInfographicId || isSlideChanged
 
-    if (shouldInitSelection && initialSlideData.infographics.length > 0) {
-      const firstInfographic = initialSlideData.infographics[0]
-      setSelectedInfographicId(firstInfographic.id)
-      setEditingContent(firstInfographic.content)
+    // 只在首次加载或 slide 切换时设置数据
+    if (lastSlideIdRef.current === null || isSlideChanged) {
+      setSlide(initialSlideData)
+
+      if (initialSlideData.infographics.length > 0) {
+        const firstInfographic = initialSlideData.infographics[0]
+        setSelectedInfographicId(firstInfographic.id)
+        setEditingContent(firstInfographic.content)
+      }
     }
 
     lastSlideIdRef.current = slideId
   }, [
     initialSlideData,
-    selectedInfographicId,
     setSlide,
     setSelectedInfographicId,
     setEditingContent,
@@ -118,6 +122,7 @@ export function SlidePanels({
 
   return (
     <main className="flex h-full overflow-hidden p-4 pt-0">
+      <JotaiDevTools />
       <Group
         className="h-full w-full"
         defaultLayout={defaultLayout}
