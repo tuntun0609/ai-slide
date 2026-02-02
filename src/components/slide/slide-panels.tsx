@@ -125,13 +125,18 @@ export function SlidePanels({
       <JotaiDevTools />
       <Group
         className="h-full w-full"
-        defaultLayout={defaultLayout}
+        defaultLayout={
+          defaultLayout ?? {
+            'infographic-viewer': 70,
+            'infographic-editor': 30,
+          }
+        }
         onLayoutChange={onLayoutChange}
         orientation="horizontal"
       >
         <Panel
           className="flex flex-col overflow-hidden rounded-xl border bg-card shadow-xs"
-          defaultSize={70}
+          id="infographic-viewer"
           minSize="400px"
         >
           <div className="relative min-h-0 flex-1">
@@ -156,8 +161,7 @@ export function SlidePanels({
             isCollapsed ? 'border-transparent bg-transparent shadow-none' : ''
           )}
           collapsible
-          defaultSize={30}
-          minSize="300px"
+          id="infographic-editor"
           onResize={(size) => {
             setIsCollapsed(size.asPercentage === 0)
           }}

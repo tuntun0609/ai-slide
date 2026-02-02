@@ -1,7 +1,7 @@
 'use client'
 
 import { useChat } from '@ai-sdk/react'
-import { DefaultChatTransport } from 'ai'
+import { DefaultChatTransport, isReasoningUIPart } from 'ai'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { nanoid } from 'nanoid'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -26,6 +26,11 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
 } from '@/components/ai-elements/prompt-input'
+import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+} from '@/components/ai-elements/reasoning'
 import {
   Tool,
   ToolContent,
@@ -63,6 +68,7 @@ function extractMessageText(message: ChatMessage): string {
 
 export function AIGenerator({ slideId }: AIGeneratorProps) {
   const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const selectedId = useAtomValue(selectedInfographicIdAtom)
   const setSelectedId = useSetAtom(selectedInfographicIdAtom)
   const slide = useAtomValue(slideAtom)
@@ -330,8 +336,16 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
     if (status === 'error') {
       const errorMessage = chatError?.message || '请求失败，请稍后重试'
       setError(errorMessage)
+      setIsSubmitting(false)
     }
   }, [status, chatError])
+
+  // 当 status 变为 streaming 时，重置 isSubmitting（因为此时 status 已经更新）
+  useEffect(() => {
+    if (status === 'streaming') {
+      setIsSubmitting(false)
+    }
+  }, [status])
 
   // 当 status 变为 ready 时，清空已处理的工具调用记录并刷新待更新内容
   useEffect(() => {
@@ -347,6 +361,8 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
       lastExecuteTimeRef.current = 0
       // 重置最后创建的信息图ID，为下一批工具调用做准备
       lastCreatedInfographicIdRef.current = null
+      // 重置提交状态
+      setIsSubmitting(false)
     }
   }, [status, flushPendingUpdate])
 
@@ -367,11 +383,14 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
     }
 
     setError(null)
+    // 立即设置提交状态，确保 loading 立即显示
+    setIsSubmitting(true)
 
     try {
       sendMessage({ text: trimmedInput })
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成失败，请稍后重试')
+      setIsSubmitting(false)
     }
   }
 
@@ -389,7 +408,8 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
     return undefined
   }
 
-  const isLoading = status === 'streaming' || status === 'submitted'
+  const isLoading =
+    isSubmitting || status === 'streaming' || status === 'submitted'
 
   // 获取输入框的 placeholder 文本
   const getPlaceholder = () => {
@@ -505,6 +525,30 @@ export function AIGenerator({ slideId }: AIGeneratorProps) {
                         <Loader className="text-muted-foreground" size={16} />
                       ) : (
                         <div className="space-y-3">
+                          {/* 渲染 reasoning 内容 */}
+                          {message.parts
+                            .filter(
+                              (
+                                part
+                              ): part is Extract<
+                                typeof part,
+                                { type: 'reasoning' }
+                              > => isReasoningUIPart(part)
+                            )
+                            .map((reasoningPart, idx) => (
+                              <Reasoning
+                                defaultOpen={true}
+                                isStreaming={
+                                  reasoningPart.state === 'streaming'
+                                }
+                                key={`reasoning-${idx}`}
+                              >
+                                <ReasoningTrigger />
+                                <ReasoningContent>
+                                  {reasoningPart.text}
+                                </ReasoningContent>
+                              </Reasoning>
+                            ))}
                           {/* 渲染文本内容 */}
                           {hasContent && (
                             <MessageResponse>{textContent}</MessageResponse>
