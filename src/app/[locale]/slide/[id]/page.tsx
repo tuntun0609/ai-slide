@@ -79,7 +79,6 @@ export default async function SlideIdPage({
 
   return (
     <JotaiProvider>
-      {/* <JotaiDevTools /> */}
       <SlidePanels
         defaultLayout={defaultLayout}
         initialSlideData={{

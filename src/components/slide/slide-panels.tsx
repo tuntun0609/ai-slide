@@ -1,7 +1,6 @@
 'use client'
 
 import { useSetAtom } from 'jotai'
-import { DevTools as JotaiDevTools } from 'jotai-devtools'
 import Cookies from 'js-cookie'
 import { PanelRightClose } from 'lucide-react'
 import { usePathname, useSearchParams } from 'next/navigation'
@@ -122,7 +121,7 @@ export function SlidePanels({
 
   return (
     <main className="flex h-full overflow-hidden p-4 pt-0">
-      <JotaiDevTools />
+      {/* <JotaiDevTools /> */}
       <Group
         className="h-full w-full"
         defaultLayout={
