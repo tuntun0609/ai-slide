@@ -1,5 +1,4 @@
 import { FileText, FolderRoot } from 'lucide-react'
-import Link from 'next/link'
 import type * as React from 'react'
 import { LogoIcon } from '@/components/logo'
 import {
@@ -13,6 +12,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
+import { Link } from '@/i18n/navigation'
 import { NewSlideButton } from './new-slide-button'
 
 export function SlideSidebar({
@@ -58,10 +58,12 @@ export function SlideSidebar({
                 </SidebarMenuButton>
               </SidebarMenuItem> */}
               <SidebarMenuItem>
-                <SidebarMenuButton className="py-2.5">
-                  <FileText className="size-4 text-muted-foreground" />
-                  <span className="font-medium text-sm">Explore More</span>
-                </SidebarMenuButton>
+                <Link href="/slide/explore">
+                  <SidebarMenuButton className="py-2.5">
+                    <FileText className="size-4 text-muted-foreground" />
+                    <span className="font-medium text-sm">Explore More</span>
+                  </SidebarMenuButton>
+                </Link>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
