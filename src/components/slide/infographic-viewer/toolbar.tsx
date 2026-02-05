@@ -5,11 +5,19 @@ import {
   ChevronRight,
   Copy,
   Download,
+  FileImage,
+  FileType,
   Maximize2,
   Plus,
 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { DeleteDialog } from './delete-dialog'
 
@@ -23,7 +31,7 @@ interface ToolbarProps {
   onNext: () => void
   onAddSlide: () => void
   onDeleteSlide: () => void
-  onDownload: () => void
+  onDownload: (format: 'svg' | 'png') => void
   onCopyAsPng: () => void
   onFullscreen: () => void
   onJumpTo: (index: number) => void
@@ -164,15 +172,30 @@ export function Toolbar({
           >
             <Copy className="h-4 w-4" />
           </Button>
-          <Button
-            disabled={isEmptyContent}
-            onClick={onDownload}
-            size="icon-sm"
-            title="下载"
-            variant="ghost"
-          >
-            <Download className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  disabled={isEmptyContent}
+                  size="icon-sm"
+                  title="下载"
+                  variant="ghost"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="center">
+              <DropdownMenuItem onClick={() => onDownload('svg')}>
+                <FileType className="mr-2 h-4 w-4" />
+                <span>下载为 SVG</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onDownload('png')}>
+                <FileImage className="mr-2 h-4 w-4" />
+                <span>下载为 PNG</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             onClick={onFullscreen}
             size="icon-sm"

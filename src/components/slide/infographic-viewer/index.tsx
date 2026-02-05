@@ -203,29 +203,59 @@ export function InfographicViewer({
     }
   }, [])
 
-  // 工具栏操作函数
-  const handleDownload = useCallback(() => {
-    if (!containerRef.current) {
-      return
-    }
+  // 工具栏操作函数 - 下载信息图
+  const handleDownload = useCallback(
+    async (format: 'svg' | 'png') => {
+      const infographicInstance = infographicRendererRef.current?.getInstance()
+      if (!infographicInstance) {
+        toast.error('无法获取信息图实例')
+        return
+      }
 
-    const svgElement = containerRef.current.querySelector('svg')
-    if (!svgElement) {
-      return
-    }
+      try {
+        const timestamp = Date.now()
+        let dataUrl: string
+        let filename: string
 
-    const svgData = new XMLSerializer().serializeToString(svgElement)
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
-    const svgUrl = URL.createObjectURL(svgBlob)
+        if (format === 'svg') {
+          // 导出 SVG
+          dataUrl = await infographicInstance.toDataURL({
+            type: 'svg',
+            embedResources: true,
+            removeIds: false,
+          })
+          filename = `infographic-${slideId}-${timestamp}.svg`
+        } else {
+          // 导出 PNG
+          dataUrl = await infographicInstance.toDataURL({
+            type: 'png',
+            dpr: 2, // 使用 2x 分辨率以获得更清晰的图像
+          })
+          filename = `infographic-${slideId}-${timestamp}.png`
+        }
 
-    const downloadLink = document.createElement('a')
-    downloadLink.href = svgUrl
-    downloadLink.download = `infographic-${slideId}-${Date.now()}.svg`
-    document.body.appendChild(downloadLink)
-    downloadLink.click()
-    document.body.removeChild(downloadLink)
-    URL.revokeObjectURL(svgUrl)
-  }, [slideId])
+        // 将 Data URL 转换为 Blob
+        const response = await fetch(dataUrl)
+        const blob = await response.blob()
+
+        // 创建下载链接
+        const downloadUrl = URL.createObjectURL(blob)
+        const downloadLink = document.createElement('a')
+        downloadLink.href = downloadUrl
+        downloadLink.download = filename
+        document.body.appendChild(downloadLink)
+        downloadLink.click()
+        document.body.removeChild(downloadLink)
+        URL.revokeObjectURL(downloadUrl)
+
+        toast.success(`已下载为 ${format.toUpperCase()}`)
+      } catch (error) {
+        console.error(`Failed to download as ${format}:`, error)
+        toast.error('下载失败')
+      }
+    },
+    [slideId]
+  )
 
   const handleFullscreen = useCallback(() => {
     if (!wrapperRef.current) {
