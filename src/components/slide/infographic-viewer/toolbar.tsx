@@ -28,7 +28,6 @@ interface ToolbarProps {
   isEmptyContent: boolean
   isFullscreen: boolean
   isCopying?: boolean
-  isExportingPptx?: boolean
   onPrevious: () => void
   onNext: () => void
   onAddSlide: () => void
@@ -46,7 +45,6 @@ export function Toolbar({
   isEmptyContent,
   isFullscreen,
   isCopying = false,
-  isExportingPptx = false,
   onPrevious,
   onNext,
   onAddSlide,
@@ -200,11 +198,11 @@ export function Toolbar({
                 <span>下载为 PNG</span>
               </DropdownMenuItem>
               <DropdownMenuItem
-                disabled={isExportingPptx || totalCount === 0}
+                disabled={totalCount === 0}
                 onClick={onExportPptx}
               >
                 <Presentation className="mr-2 h-4 w-4" />
-                <span>{isExportingPptx ? '导出中...' : '导出为 PPT'}</span>
+                <span>导出为 PPT</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

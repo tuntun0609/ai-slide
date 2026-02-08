@@ -35,7 +35,6 @@ export function InfographicViewer({ slideId }: InfographicViewerProps) {
   const infographicRendererRef = useRef<InfographicRendererRef>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isCopying, setIsCopying] = useState(false)
-  const [isExportingPptx, setIsExportingPptx] = useState(false)
 
   // 计算当前索引和总数
   const { currentIndex, totalCount } = useMemo(() => {
@@ -226,21 +225,16 @@ export function InfographicViewer({ slideId }: InfographicViewerProps) {
   )
 
   // 导出为 PPT
-  const handleExportPptx = useCallback(async () => {
+  const handleExportPptx = useCallback(() => {
     if (!slide || slide.infographics.length === 0) {
       return
     }
 
-    setIsExportingPptx(true)
-    try {
-      await exportToPptx(slide.infographics, slide.title || 'slide')
-      toast.success('已导出为 PPT')
-    } catch (error) {
-      console.error('Failed to export PPTX:', error)
-      toast.error('导出 PPT 失败')
-    } finally {
-      setIsExportingPptx(false)
-    }
+    toast.promise(exportToPptx(slide.infographics, slide.title || 'slide'), {
+      loading: '正在导出 PPT...',
+      success: '已导出为 PPT',
+      error: '导出 PPT 失败',
+    })
   }, [slide])
 
   const handleFullscreen = useCallback(() => {
@@ -304,7 +298,6 @@ export function InfographicViewer({ slideId }: InfographicViewerProps) {
         currentIndex={currentIndex}
         isCopying={isCopying}
         isEmptyContent={isEmptyContent}
-        isExportingPptx={isExportingPptx}
         isFullscreen={isFullscreen}
         onAddSlide={handleAddSlide}
         onCopyAsPng={handleCopyAsPng}
