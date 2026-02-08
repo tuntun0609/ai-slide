@@ -88,10 +88,10 @@ export default function HeroSection() {
                 <AnimatedGroup variants={transitionVariants as Variants}>
                   <Link
                     className="group mx-auto flex w-fit items-center gap-4 rounded-full border bg-muted p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors duration-300 hover:bg-background dark:border-t-white/5 dark:shadow-zinc-950 dark:hover:border-t-border"
-                    href="#link"
+                    href="/slide"
                   >
                     <span className="text-foreground text-sm">
-                      Introducing Support for AI Models
+                      AI 驱动的信息图创建工具
                     </span>
                     <span className="block h-4 w-0.5 border-l bg-white dark:border-background dark:bg-zinc-700" />
 
@@ -111,10 +111,11 @@ export default function HeroSection() {
                 <TextEffect
                   as="h1"
                   className="mx-auto mt-8 max-w-4xl text-balance text-5xl max-md:font-semibold md:text-7xl lg:mt-16 xl:text-[5.25rem]"
+                  per="line"
                   preset="fade-in-blur"
                   speedSegment={0.3}
                 >
-                  Modern Solutions for Customer Engagement
+                  {'用AI快速创建\n精美的信息图表'}
                 </TextEffect>
                 <TextEffect
                   as="p"
@@ -124,8 +125,8 @@ export default function HeroSection() {
                   preset="fade-in-blur"
                   speedSegment={0.3}
                 >
-                  Highly customizable components for building modern websites
-                  and applications that look and feel the way you mean it.
+                  只需简单描述，AI 即可为您生成专业的信息图表和演示文稿。
+                  支持列表、对比、SWOT、思维导图等多种模板，让创意表达更简单。
                 </TextEffect>
 
                 <AnimatedGroup
@@ -154,18 +155,18 @@ export default function HeroSection() {
                       render={<Link href="/slide" />}
                       size="lg"
                     >
-                      <span className="text-nowrap">Start Building</span>
+                      <span className="text-nowrap">开始创建</span>
                     </Button>
                   </div>
                   <Button
                     className="h-10.5 rounded-xl px-5"
                     key={2}
                     nativeButton={false}
-                    render={<Link href="#link" />}
+                    render={<Link href="/slide/explore" />}
                     size="lg"
                     variant="ghost"
                   >
-                    <span className="text-nowrap">Request a demo</span>
+                    <span className="text-nowrap">探索更多</span>
                   </Button>
                 </AnimatedGroup>
               </div>
@@ -212,9 +213,9 @@ export default function HeroSection() {
             <div className="absolute inset-0 z-10 flex scale-95 items-center justify-center opacity-0 duration-500 group-hover:scale-100 group-hover:opacity-100">
               <Link
                 className="block text-sm duration-150 hover:opacity-75"
-                href="/"
+                href="/slide"
               >
-                <span> Meet Our Customers</span>
+                <span>开始使用 ASlide</span>
 
                 <ChevronRight className="ml-1 inline-block size-3" />
               </Link>

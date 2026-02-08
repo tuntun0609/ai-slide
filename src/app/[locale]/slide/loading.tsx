@@ -43,15 +43,6 @@ export default function Loading() {
           ))}
         </div>
       </main>
-
-      {/* 分页骨架 */}
-      <footer className="flex justify-center border-t bg-background/50 py-4 backdrop-blur-sm">
-        <div className="flex items-center gap-1">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton className="h-8 w-8 rounded-full" key={i} />
-          ))}
-        </div>
-      </footer>
     </div>
   )
 }
