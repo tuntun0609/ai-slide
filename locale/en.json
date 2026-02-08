@@ -50,5 +50,23 @@
         "fileUpload": "File Upload"
       }
     }
+  },
+  "footer": {
+    "description": "Empower your presentation creation with AI. Input your ideas and generate beautiful slides effortlessly.",
+    "product": {
+      "title": "Product",
+      "home": "Home",
+      "workspace": "Workspace",
+      "explore": "Explore",
+      "features": "Features",
+      "pricing": "Pricing"
+    },
+    "resources": {
+      "title": "Resources",
+      "documentation": "Documentation",
+      "examples": "Examples",
+      "icons": "Icons"
+    },
+    "copyright": "All rights reserved."
   }
 }

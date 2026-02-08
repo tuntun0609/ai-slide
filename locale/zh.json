@@ -50,5 +50,23 @@
         "fileUpload": "文件上传"
       }
     }
+  },
+  "footer": {
+    "description": "用 AI 的力量，让演示文稿创作变得简单高效。输入想法，生成精美幻灯片。",
+    "product": {
+      "title": "产品",
+      "home": "首页",
+      "workspace": "工作台",
+      "explore": "探索",
+      "features": "功能特性",
+      "pricing": "定价"
+    },
+    "resources": {
+      "title": "资源",
+      "documentation": "参考文档",
+      "examples": "示例",
+      "icons": "图标"
+    },
+    "copyright": "保留所有权利。"
   }
 }

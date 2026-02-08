@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import HeroSection from '@/components/hero-section'
 
 export const metadata: Metadata = {
-  title: 'Home',
+  title: 'InfographAI - AI-Powered Slide Creation Tool',
   description:
     'InfographAI - AI-powered slide creation tool that helps you quickly create beautiful infographics and presentations.',
 }
