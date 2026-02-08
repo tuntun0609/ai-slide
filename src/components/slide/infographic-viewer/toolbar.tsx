@@ -9,6 +9,7 @@ import {
   FileType,
   Maximize2,
   Plus,
+  Presentation,
 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -27,12 +28,14 @@ interface ToolbarProps {
   isEmptyContent: boolean
   isFullscreen: boolean
   isCopying?: boolean
+  isExportingPptx?: boolean
   onPrevious: () => void
   onNext: () => void
   onAddSlide: () => void
   onDeleteSlide: () => void
   onDownload: (format: 'svg' | 'png') => void
   onCopyAsPng: () => void
+  onExportPptx: () => void
   onFullscreen: () => void
   onJumpTo: (index: number) => void
 }
@@ -43,12 +46,14 @@ export function Toolbar({
   isEmptyContent,
   isFullscreen,
   isCopying = false,
+  isExportingPptx = false,
   onPrevious,
   onNext,
   onAddSlide,
   onDeleteSlide,
   onDownload,
   onCopyAsPng,
+  onExportPptx,
   onFullscreen,
   onJumpTo,
 }: ToolbarProps) {
@@ -193,6 +198,13 @@ export function Toolbar({
               <DropdownMenuItem onClick={() => onDownload('png')}>
                 <FileImage className="mr-2 h-4 w-4" />
                 <span>下载为 PNG</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={isExportingPptx || totalCount === 0}
+                onClick={onExportPptx}
+              >
+                <Presentation className="mr-2 h-4 w-4" />
+                <span>{isExportingPptx ? '导出中...' : '导出为 PPT'}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -4,6 +4,7 @@ import { useAtomValue, useSetAtom } from 'jotai'
 import { nanoid } from 'nanoid'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { exportToPptx } from '@/lib/export-pptx'
 import {
   addInfographicAtom,
   deleteInfographicAtom,
@@ -34,6 +35,7 @@ export function InfographicViewer({ slideId }: InfographicViewerProps) {
   const infographicRendererRef = useRef<InfographicRendererRef>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isCopying, setIsCopying] = useState(false)
+  const [isExportingPptx, setIsExportingPptx] = useState(false)
 
   // 计算当前索引和总数
   const { currentIndex, totalCount } = useMemo(() => {
@@ -223,6 +225,24 @@ export function InfographicViewer({ slideId }: InfographicViewerProps) {
     [slideId]
   )
 
+  // 导出为 PPT
+  const handleExportPptx = useCallback(async () => {
+    if (!slide || slide.infographics.length === 0) {
+      return
+    }
+
+    setIsExportingPptx(true)
+    try {
+      await exportToPptx(slide.infographics, slide.title || 'slide')
+      toast.success('已导出为 PPT')
+    } catch (error) {
+      console.error('Failed to export PPTX:', error)
+      toast.error('导出 PPT 失败')
+    } finally {
+      setIsExportingPptx(false)
+    }
+  }, [slide])
+
   const handleFullscreen = useCallback(() => {
     if (!wrapperRef.current) {
       return
@@ -284,11 +304,13 @@ export function InfographicViewer({ slideId }: InfographicViewerProps) {
         currentIndex={currentIndex}
         isCopying={isCopying}
         isEmptyContent={isEmptyContent}
+        isExportingPptx={isExportingPptx}
         isFullscreen={isFullscreen}
         onAddSlide={handleAddSlide}
         onCopyAsPng={handleCopyAsPng}
         onDeleteSlide={handleDeleteSlide}
         onDownload={handleDownload}
+        onExportPptx={handleExportPptx}
         onFullscreen={handleFullscreen}
         onJumpTo={handleJumpTo}
         onNext={handleNext}
