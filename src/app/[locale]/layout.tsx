@@ -20,13 +20,13 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'InfographAI',
-    template: '%s | InfographAI',
+    default: 'InfographicAI',
+    template: '%s | InfographicAI',
   },
   description:
-    'InfographAI is an AI-powered slide creation tool that helps you quickly create beautiful infographics and presentations.',
+    'InfographicAI is an AI-powered slide creation tool that helps you quickly create beautiful infographics and presentations.',
   keywords: [
-    'InfographAI',
+    'InfographicAI',
     'AI infographic',
     'presentation',
     'infographic',
@@ -34,16 +34,16 @@ export const metadata: Metadata = {
     'AI tool',
   ],
   openGraph: {
-    title: 'InfographAI - AI-Powered Slide Creation Tool',
+    title: 'InfographicAI - AI-Powered Slide Creation Tool',
     description:
-      'InfographAI is an AI-powered slide creation tool that helps you quickly create beautiful infographics and presentations.',
+      'InfographicAI is an AI-powered slide creation tool that helps you quickly create beautiful infographics and presentations.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'InfographAI - AI-Powered Slide Creation Tool',
+    title: 'InfographicAI - AI-Powered Slide Creation Tool',
     description:
-      'InfographAI is an AI-powered slide creation tool that helps you quickly create beautiful infographics and presentations.',
+      'InfographicAI is an AI-powered slide creation tool that helps you quickly create beautiful infographics and presentations.',
   },
 }
 

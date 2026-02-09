@@ -14,7 +14,7 @@ export const Logo = ({
       viewBox="0 0 110 18"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <title>InfographAI Logo</title>
+      <title>InfographicAI Logo</title>
       {/* Icon: Modern chart/AI symbol */}
       <g>
         {/* Chart bars representing data visualization */}
@@ -66,7 +66,7 @@ export const Logo = ({
         </g>
       </g>
 
-      {/* Text: InfographAI - using path for better compatibility */}
+      {/* Text: InfographicAI - using path for better compatibility */}
       <text
         fill="currentColor"
         fontFamily="var(--font-sans), system-ui, -apple-system, sans-serif"
@@ -76,7 +76,7 @@ export const Logo = ({
         x="18"
         y="13.5"
       >
-        InfographAI
+        InfographicAI
       </text>
 
       <defs>
@@ -112,7 +112,7 @@ export const LogoIcon = ({
       width="18"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <title>InfographAI Icon</title>
+      <title>InfographicAI Icon</title>
       {/* Chart bars */}
       <rect
         fill={uniColor ? 'currentColor' : 'url(#logo-icon-gradient)'}

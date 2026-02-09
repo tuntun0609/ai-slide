@@ -11,7 +11,7 @@ const PAGE_SIZE = 12
 export const metadata: Metadata = {
   title: 'My Slides',
   description:
-    'View and manage all your slides and infographics created in InfographAI.',
+    'View and manage all your slides and infographics created in InfographicAI.',
 }
 
 export default async function SlidePage({

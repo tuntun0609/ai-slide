@@ -25,7 +25,7 @@ const SHOWCASE_CASES: ShowcaseCase[] = [
     slides: [
       `infographic sequence-pyramid-simple
 data
-  title AI Intelligence Hierarchy
+  title AI Intelligence
   sequences
     - label Data Layer
       desc Raw data: text, images, audio

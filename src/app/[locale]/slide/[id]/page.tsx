@@ -36,14 +36,14 @@ export async function generateMetadata({
 
   return {
     title: slideData.title || 'Untitled Slide',
-    description: `Edit in InfographAI: ${slideData.title || 'Untitled Slide'}`,
+    description: `Edit in InfographicAI: ${slideData.title || 'Untitled Slide'}`,
     openGraph: {
-      title: `${slideData.title || 'Untitled Slide'} | InfographAI`,
-      description: `Edit in InfographAI: ${slideData.title || 'Untitled Slide'}`,
+      title: `${slideData.title || 'Untitled Slide'} | InfographicAI`,
+      description: `Edit in InfographicAI: ${slideData.title || 'Untitled Slide'}`,
     },
     twitter: {
-      title: `${slideData.title || 'Untitled Slide'} | InfographAI`,
-      description: `Edit in InfographAI: ${slideData.title || 'Untitled Slide'}`,
+      title: `${slideData.title || 'Untitled Slide'} | InfographicAI`,
+      description: `Edit in InfographicAI: ${slideData.title || 'Untitled Slide'}`,
     },
   }
 }

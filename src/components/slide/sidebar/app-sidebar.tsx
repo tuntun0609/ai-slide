@@ -27,7 +27,7 @@ export function SlideSidebar({
               <LogoIcon className="size-5" uniColor />
             </div>
             <span className="font-bold text-lg tracking-tight">
-              InfographAI
+              InfographicAI
             </span>
           </div>
         </Link>

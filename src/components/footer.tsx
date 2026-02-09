@@ -17,7 +17,7 @@ export function Footer() {
               <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
                 <LogoIcon className="size-4 text-white" uniColor />
               </div>
-              <span className="font-bold text-lg">InfographAI</span>
+              <span className="font-bold text-lg">InfographicAI</span>
             </Link>
             <p className="max-w-xs text-center text-muted-foreground text-sm leading-relaxed md:text-left">
               {t('description')}
@@ -110,7 +110,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 border-t pt-8 text-center text-muted-foreground text-sm">
-          © {new Date().getFullYear()} InfographAI. {t('copyright')}
+          © {new Date().getFullYear()} InfographicAI. {t('copyright')}
         </div>
       </div>
     </footer>
