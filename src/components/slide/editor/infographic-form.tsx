@@ -413,7 +413,7 @@ function ItemEditor({
             <GripVerticalIcon className="size-3.5" />
           </button>
         )}
-        <span className="w-4 shrink-0 text-[10px] text-muted-foreground">
+        <span className="w-4 shrink-0 text-[14px] text-muted-foreground">
           {index + 1}
         </span>
         <div className="flex-1" />
@@ -573,7 +573,7 @@ function ChildItemEditor({
             <GripVerticalIcon className="size-3" />
           </button>
         )}
-        <span className="w-4 shrink-0 text-[10px] text-muted-foreground">
+        <span className="w-4 shrink-0 text-[12px] text-muted-foreground">
           {index + 1}
         </span>
         <Input

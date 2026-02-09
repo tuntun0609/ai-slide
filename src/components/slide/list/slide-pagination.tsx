@@ -21,12 +21,12 @@ export function SlidePagination({
   }
 
   return (
-    <footer className="flex justify-center border-t bg-background/50 py-4 backdrop-blur-sm">
-      <div className="flex items-center gap-1">
+    <footer className="flex justify-center border-t bg-background/50 py-3 backdrop-blur-sm sm:py-4">
+      <div className="flex items-center gap-1 overflow-x-auto px-4 sm:px-0">
         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
           <Button
             className={cn(
-              'h-8 w-8 rounded-full p-0 font-normal',
+              'h-8 min-w-8 rounded-full p-0 font-normal text-xs sm:text-sm',
               currentPage === page &&
                 'bg-foreground text-background hover:bg-foreground/90'
             )}

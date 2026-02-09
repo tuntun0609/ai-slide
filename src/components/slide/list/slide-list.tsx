@@ -44,11 +44,11 @@ export function SlideList({
         totalCount={totalCount}
       />
 
-      <main className="flex-1 overflow-y-auto p-8">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
         {slides.length === 0 ? (
           <EmptyState isPending={isPending} onCreate={handleCreateSlide} />
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {slides.map((slide) => (
               <SlideCard key={slide.id} slide={slide} />
             ))}

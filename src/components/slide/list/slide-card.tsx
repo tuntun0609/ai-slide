@@ -92,15 +92,18 @@ export function SlideCard({ slide }: SlideCardProps) {
 
       <SlideCardMenu slide={slide} />
 
-      <div className="flex flex-col gap-1 border-t bg-background p-4">
+      <div className="flex flex-col gap-1 border-t bg-background p-3 sm:p-4">
         <div className="flex items-center justify-between">
-          <h3 className="truncate font-medium text-sm" title={slide.title}>
+          <h3
+            className="truncate font-medium text-xs sm:text-sm"
+            title={slide.title}
+          >
             {slide.title}
           </h3>
         </div>
         <div className="flex items-center justify-between text-muted-foreground text-xs">
           <span>{slide.infographics?.length || 0} 页</span>
-          <span>
+          <span className="text-[10px] sm:text-xs">
             {formatDistanceToNow(slide.updatedAt || slide.createdAt, {
               addSuffix: true,
               locale: zhCN,
