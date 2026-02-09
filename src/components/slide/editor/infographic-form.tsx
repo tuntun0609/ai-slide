@@ -392,7 +392,7 @@ interface ItemEditorProps {
   showValue: boolean
   showChildren: boolean
   dragControls?: DragControls
-  t: (key: string) => string
+  t: ReturnType<typeof useTranslations<'slideEditor'>>
 }
 
 function ItemEditor({
@@ -566,7 +566,7 @@ interface ChildItemEditorProps {
   onRemove: () => void
   showValue: boolean
   dragControls?: DragControls
-  t: (key: string) => string
+  t: ReturnType<typeof useTranslations<'slideEditor'>>
 }
 
 function ChildItemEditor({
@@ -629,7 +629,7 @@ interface RootItemEditorProps {
   item: InfographicItem
   onChange: (item: InfographicItem) => void
   showValue: boolean
-  t: (key: string) => string
+  t: ReturnType<typeof useTranslations<'slideEditor'>>
 }
 
 function RootItemEditor({ item, onChange, showValue, t }: RootItemEditorProps) {

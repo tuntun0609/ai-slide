@@ -1,7 +1,7 @@
 'use client'
 
 import { Languages } from 'lucide-react'
-import { useLocale, useTranslations } from 'next-intl'
+import { type Locale, useLocale, useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -22,7 +22,7 @@ export function LanguageSwitcher() {
   const pathname = usePathname()
   const t = useTranslations('languageSwitcher')
 
-  const handleLanguageChange = (newLocale: string) => {
+  const handleLanguageChange = (newLocale: Locale) => {
     router.replace(pathname, { locale: newLocale })
   }
 
