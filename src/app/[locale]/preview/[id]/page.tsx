@@ -11,7 +11,7 @@ const getPublishedSlide = cache(async (id: string) => {
   const slideData = await db.query.slide.findFirst({
     where: eq(slide.id, id),
   })
-  if (!(slideData && slideData.published)) {
+  if (!slideData?.published) {
     return null
   }
   return slideData

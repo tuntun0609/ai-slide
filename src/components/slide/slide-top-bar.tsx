@@ -47,7 +47,9 @@ export function SlideTopBar({
   const isPublished = slide?.published ?? false
 
   const handleTogglePublish = () => {
-    if (!slide) return
+    if (!slide) {
+      return
+    }
     startPublishTransition(async () => {
       try {
         const newPublished = !isPublished
@@ -63,7 +65,9 @@ export function SlideTopBar({
   }
 
   const handleCopyLink = () => {
-    if (!slide) return
+    if (!slide) {
+      return
+    }
     const url = `${window.location.origin}/preview/${slide.id}`
     navigator.clipboard.writeText(url)
     toast.success(t('linkCopied'))

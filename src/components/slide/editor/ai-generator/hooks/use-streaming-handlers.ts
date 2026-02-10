@@ -191,38 +191,29 @@ export function useStreamingHandlers({
     }
 
     for (const part of lastMessage.parts) {
-      // 处理 editInfographic 流式更新
-      if (part.type === 'tool-editInfographic') {
-        const toolPart = part as {
-          toolCallId: string
-          state: string
-          input?: { infographicId?: string; syntax?: string }
-        }
-
-        if (toolPart.input) {
-          handleEditInfographicStreaming(
-            toolPart.toolCallId,
-            toolPart.input,
-            toolPart.state
-          )
-        }
+      const toolPart = part as {
+        type: string
+        toolCallId: string
+        state: string
+        input?: { infographicId?: string; syntax?: string; title?: string }
       }
 
-      // 处理 createInfographic 流式更新
-      if (part.type === 'tool-createInfographic') {
-        const toolPart = part as {
-          toolCallId: string
-          state: string
-          input?: { title?: string; syntax?: string }
-        }
+      if (!toolPart.input) {
+        continue
+      }
 
-        if (toolPart.input) {
-          handleCreateInfographicStreaming(
-            toolPart.toolCallId,
-            toolPart.input,
-            toolPart.state
-          )
-        }
+      if (toolPart.type === 'tool-editInfographic') {
+        handleEditInfographicStreaming(
+          toolPart.toolCallId,
+          toolPart.input,
+          toolPart.state
+        )
+      } else if (toolPart.type === 'tool-createInfographic') {
+        handleCreateInfographicStreaming(
+          toolPart.toolCallId,
+          toolPart.input,
+          toolPart.state
+        )
       }
     }
   }, [

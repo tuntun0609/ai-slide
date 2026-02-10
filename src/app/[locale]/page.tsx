@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
 import HeroSection from '@/components/hero-section'
 
 export async function generateMetadata({
@@ -7,7 +6,6 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string }>
 }): Promise<Metadata> {
-  const t = await getTranslations('hero')
   const locale = (await params).locale
 
   return {

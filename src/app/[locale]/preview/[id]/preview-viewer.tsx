@@ -58,7 +58,9 @@ export function PreviewViewer({ title, infographics }: PreviewViewerProps) {
 
   const renderInfographic = useCallback(
     (content: string, options: { theme: 'dark' | 'light' }) => {
-      if (!containerRef.current) return
+      if (!containerRef.current) {
+        return
+      }
 
       try {
         if (infographicInstanceRef.current) {
@@ -120,7 +122,9 @@ export function PreviewViewer({ title, infographics }: PreviewViewerProps) {
   }
 
   const handleFullscreen = useCallback(() => {
-    if (!wrapperRef.current) return
+    if (!wrapperRef.current) {
+      return
+    }
     if (document.fullscreenElement) {
       document.exitFullscreen()
     } else {
@@ -167,7 +171,9 @@ export function PreviewViewer({ title, infographics }: PreviewViewerProps) {
   )
 
   const handleExportPptx = useCallback(() => {
-    if (infographics.length === 0) return
+    if (infographics.length === 0) {
+      return
+    }
     toast.promise(exportToPptx(infographics, title || 'slide'), {
       loading: t('exportPptLoading'),
       success: t('exportPptSuccess'),
