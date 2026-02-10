@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useTransition } from 'react'
 import { toast } from 'sonner'
@@ -26,12 +27,14 @@ export function SlideList({
   totalCount,
 }: SlideListProps) {
   const t = useTranslations('slide')
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
   const handleCreateSlide = () => {
     startTransition(async () => {
       try {
-        await createSlide()
+        const id = await createSlide()
+        router.push(`/slide/${id}`)
       } catch {
         toast.error(t('createFailed'))
       }

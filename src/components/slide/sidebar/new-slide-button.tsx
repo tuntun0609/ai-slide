@@ -1,6 +1,7 @@
 'use client'
 
 import { Loader2, Plus } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import { createSlide } from '@/actions/slide'
 import { Button } from '@/components/ui/button'
@@ -23,11 +24,13 @@ export function NewSlideButton({
   variant = 'outline',
   size = 'default',
 }: NewSlideButtonProps) {
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
   const handleCreateSlide = () => {
     startTransition(async () => {
-      await createSlide()
+      const id = await createSlide()
+      router.push(`/slide/${id}`)
     })
   }
 

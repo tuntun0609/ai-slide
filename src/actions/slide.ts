@@ -3,16 +3,15 @@
 import { eq } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { db } from '@/db'
 import { slide } from '@/db/schema'
 import { getSession } from '@/lib/auth'
 import type { Infographic } from '@/lib/slide-schema'
 
-export async function createSlide() {
+export async function createSlide(): Promise<string> {
   const session = await getSession()
   if (!session?.user) {
-    redirect('/login')
+    throw new Error('Unauthorized')
   }
 
   // 创建默认的信息图
@@ -42,7 +41,8 @@ data
   }
 
   await db.insert(slide).values(newSlide)
-  redirect(`/slide/${newSlide.id}`)
+  revalidatePath('/slide')
+  return newSlide.id
 }
 
 export async function deleteSlide(id: string) {
