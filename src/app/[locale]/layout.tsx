@@ -71,7 +71,7 @@ export default async function RootLayout({
           enableSystem
         >
           <NextIntlClientProvider>{children}</NextIntlClientProvider>
-          <Agentation />
+          {process.env.NODE_ENV === 'development' && <Agentation />}
           <Toaster richColors />
         </ThemeProvider>
       </body>
