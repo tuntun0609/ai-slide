@@ -13,10 +13,8 @@ export function Footer() {
         <div className="flex flex-col items-start gap-8 md:flex-row md:justify-between">
           {/* Brand */}
           <div className="flex flex-col items-center gap-4 md:items-start">
-            <Link className="flex items-center gap-2" href="/">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
-                <LogoIcon className="size-4 text-white" uniColor />
-              </div>
+            <Link className="flex items-center gap-1" href="/">
+              <LogoIcon className="size-8" />
               <span className="font-bold text-lg">InfographicAI</span>
             </Link>
             <p className="max-w-xs text-center text-muted-foreground text-sm leading-relaxed md:text-left">

@@ -22,10 +22,8 @@ export function SlideSidebar({
     <Sidebar {...props}>
       <SidebarHeader className="px-2 pt-4">
         <Link href="/slide">
-          <div className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-accent">
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-foreground text-background">
-              <LogoIcon className="size-5" uniColor />
-            </div>
+          <div className="flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1.5 transition-colors hover:bg-accent">
+            <LogoIcon className="size-8" />
             <span className="font-bold text-lg tracking-tight">
               InfographicAI
             </span>

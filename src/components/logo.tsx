@@ -1,180 +1,189 @@
+'use client'
+
+import { useId } from 'react'
 import { cn } from '@/lib/utils'
 
-export const Logo = ({
+const LogoSvgContent = ({
+  idPrefix,
   className,
-  uniColor,
 }: {
+  idPrefix: string
   className?: string
-  uniColor?: boolean
 }) => {
   return (
     <svg
-      className={cn('h-6 w-auto text-foreground', className)}
+      className={className}
       fill="none"
-      viewBox="0 0 110 18"
+      viewBox="0 0 240 240"
       xmlns="http://www.w3.org/2000/svg"
     >
       <title>InfographicAI Logo</title>
-      {/* Icon: Modern chart/AI symbol */}
-      <g>
-        {/* Chart bars representing data visualization */}
-        <rect
-          fill={uniColor ? 'currentColor' : 'url(#logo-gradient-icon)'}
-          height="3"
-          rx="0.5"
-          width="2.5"
-          x="0"
-          y="13"
-        />
-        <rect
-          fill={uniColor ? 'currentColor' : 'url(#logo-gradient-icon)'}
-          height="5"
-          rx="0.5"
-          width="2.5"
-          x="3.5"
-          y="11"
-        />
-        <rect
-          fill={uniColor ? 'currentColor' : 'url(#logo-gradient-icon)'}
-          height="7"
-          rx="0.5"
-          width="2.5"
-          x="7"
-          y="9"
-        />
-        {/* AI sparkle symbol */}
-        <g fill={uniColor ? 'currentColor' : 'url(#logo-gradient-icon)'}>
-          <circle cx="12.5" cy="5.5" r="1.5" />
-          <rect height="5" rx="0.3" width="0.6" x="12.2" y="3" />
-          <rect height="0.6" rx="0.3" width="5" x="10" y="5.2" />
-          <rect
-            height="0.6"
-            rx="0.3"
-            transform="rotate(45 12.5 5.5)"
-            width="2.6"
-            x="11.2"
-            y="3.8"
-          />
-          <rect
-            height="0.6"
-            rx="0.3"
-            transform="rotate(-45 12.5 5.5)"
-            width="2.6"
-            x="11.2"
-            y="6.6"
-          />
-        </g>
-      </g>
-
-      {/* Text: InfographicAI - using path for better compatibility */}
-      <text
-        fill="currentColor"
-        fontFamily="var(--font-sans), system-ui, -apple-system, sans-serif"
-        fontSize="11.5"
-        fontWeight="600"
-        letterSpacing="-0.02em"
-        x="18"
-        y="13.5"
-      >
-        InfographicAI
-      </text>
-
       <defs>
         <linearGradient
           gradientUnits="userSpaceOnUse"
-          id="logo-gradient-icon"
-          x1="0"
-          x2="0"
-          y1="3"
-          y2="16"
+          id={`${idPrefix}-bgGradient`}
+          x1="20"
+          x2="220"
+          y1="220"
+          y2="20"
         >
-          <stop stopColor="#9B99FE" />
-          <stop offset="1" stopColor="#2BC8B7" />
+          <stop offset="0%" stopColor="#6366F1" />
+          <stop offset="100%" stopColor="#60A5FA" />
+        </linearGradient>
+        <linearGradient
+          gradientUnits="userSpaceOnUse"
+          id={`${idPrefix}-dataGradient1`}
+          x1="40"
+          x2="200"
+          y1="200"
+          y2="40"
+        >
+          <stop offset="0%" stopColor="#34D399" />
+          <stop offset="100%" stopColor="#10B981" />
+        </linearGradient>
+        <linearGradient
+          gradientUnits="userSpaceOnUse"
+          id={`${idPrefix}-dataGradient2`}
+          x1="40"
+          x2="200"
+          y1="200"
+          y2="40"
+        >
+          <stop offset="0%" stopColor="#22D3EE" />
+          <stop offset="100%" stopColor="#06B6D4" />
+        </linearGradient>
+        <linearGradient
+          gradientUnits="userSpaceOnUse"
+          id={`${idPrefix}-dataGradient3`}
+          x1="40"
+          x2="200"
+          y1="200"
+          y2="40"
+        >
+          <stop offset="0%" stopColor="#60A5FA" />
+          <stop offset="100%" stopColor="#3B82F6" />
+        </linearGradient>
+        <linearGradient
+          id={`${idPrefix}-overlayGradient`}
+          x1="0"
+          x2="1"
+          y1="0"
+          y2="1"
+        >
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
       </defs>
+      <g transform="skewY(-5)">
+        <rect
+          fill="#6366F1"
+          height="140"
+          opacity="0.3"
+          rx="12"
+          width="140"
+          x="50"
+          y="60"
+        />
+        <rect
+          fill={`url(#${idPrefix}-bgGradient)`}
+          height="160"
+          rx="16"
+          stroke="#34D399"
+          strokeOpacity="0.3"
+          strokeWidth="2"
+          width="160"
+          x="30"
+          y="40"
+        />
+      </g>
+      <g transform="translate(10, 10)">
+        <path
+          d="M45 170 V 120 C 45 115 50 110 55 110 H 75 C 80 110 85 115 85 120 V 170 C 85 175 80 180 75 180 H 55 C 50 180 45 175 45 170 Z"
+          fill={`url(#${idPrefix}-dataGradient1)`}
+          opacity="0.8"
+        />
+        <path
+          d="M95 170 V 90 C 95 85 100 80 105 80 H 125 C 130 80 135 85 135 90 V 170 C 135 175 130 180 125 180 H 105 C 100 180 95 175 95 170 Z"
+          fill={`url(#${idPrefix}-dataGradient2)`}
+          opacity="0.9"
+        />
+        <path
+          d="M145 170 V 60 C 145 55 150 50 155 50 H 175 C 180 50 185 55 185 60 V 170 C 185 175 180 180 175 180 H 155 C 150 180 145 175 145 170 Z"
+          fill={`url(#${idPrefix}-dataGradient3)`}
+        />
+      </g>
+      <g
+        filter="drop-shadow(0px 2px 4px rgba(52, 211, 153, 0.4))"
+        transform="translate(10, 10)"
+      >
+        <polyline
+          fill="none"
+          points="65 115, 115 85, 165 55"
+          stroke="#6EE7B7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="4"
+        />
+        <circle
+          cx="65"
+          cy="115"
+          fill="#D1FAE5"
+          r="6"
+          stroke="#34D399"
+          strokeWidth="2"
+        />
+        <circle
+          cx="115"
+          cy="85"
+          fill="#CFFAFE"
+          r="6"
+          stroke="#22D3EE"
+          strokeWidth="2"
+        />
+        <circle
+          cx="165"
+          cy="55"
+          fill="#DBEAFE"
+          r="6"
+          stroke="#60A5FA"
+          strokeWidth="2"
+        />
+      </g>
+      <rect
+        fill={`url(#${idPrefix}-overlayGradient)`}
+        height="160"
+        pointerEvents="none"
+        rx="16"
+        transform="skewY(-5)"
+        width="160"
+        x="30"
+        y="40"
+      />
     </svg>
   )
 }
 
-export const LogoIcon = ({
+export const Logo = ({
   className,
-  uniColor,
+  uniColor: _uniColor,
 }: {
   className?: string
   uniColor?: boolean
 }) => {
+  const id = useId()
   return (
-    <svg
-      className={cn('size-5', className)}
-      fill="none"
-      height="18"
-      viewBox="0 0 18 18"
-      width="18"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <title>InfographicAI Icon</title>
-      {/* Chart bars */}
-      <rect
-        fill={uniColor ? 'currentColor' : 'url(#logo-icon-gradient)'}
-        height="4"
-        rx="0.5"
-        width="2.5"
-        x="2"
-        y="12"
-      />
-      <rect
-        fill={uniColor ? 'currentColor' : 'url(#logo-icon-gradient)'}
-        height="6"
-        rx="0.5"
-        width="2.5"
-        x="5.5"
-        y="10"
-      />
-      <rect
-        fill={uniColor ? 'currentColor' : 'url(#logo-icon-gradient)'}
-        height="8"
-        rx="0.5"
-        width="2.5"
-        x="9"
-        y="8"
-      />
-      {/* AI sparkle */}
-      <g fill={uniColor ? 'currentColor' : 'url(#logo-icon-gradient)'}>
-        <circle cx="13.5" cy="4.5" r="1.2" />
-        <rect height="4" rx="0.3" width="0.6" x="13.2" y="2.5" />
-        <rect height="0.6" rx="0.3" width="4" x="11.5" y="4.2" />
-        <rect
-          height="0.5"
-          rx="0.25"
-          transform="rotate(45 13.5 4.5)"
-          width="2.6"
-          x="12.2"
-          y="2.8"
-        />
-        <rect
-          height="0.5"
-          rx="0.25"
-          transform="rotate(-45 13.5 4.5)"
-          width="2.6"
-          x="12.2"
-          y="5.7"
-        />
-      </g>
-      <defs>
-        <linearGradient
-          gradientUnits="userSpaceOnUse"
-          id="logo-icon-gradient"
-          x1="2"
-          x2="2"
-          y1="2.5"
-          y2="16"
-        >
-          <stop stopColor="#9B99FE" />
-          <stop offset="1" stopColor="#2BC8B7" />
-        </linearGradient>
-      </defs>
-    </svg>
+    <div className={cn('flex items-center gap-1', className)}>
+      <LogoSvgContent className="h-6 w-6" idPrefix={id} />
+      <span className="font-semibold text-lg tracking-tight">
+        InfographicAI
+      </span>
+    </div>
   )
+}
+
+export const LogoIcon = ({ className }: { className?: string }) => {
+  const id = useId()
+  return <LogoSvgContent className={cn('size-5', className)} idPrefix={id} />
 }
 
 export const LogoStroke = ({ className }: { className?: string }) => {
