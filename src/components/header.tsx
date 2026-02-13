@@ -1,5 +1,5 @@
 'use client'
-import { Loader2, Menu, User, X } from 'lucide-react'
+import { Github, Loader2, Menu, User, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import React from 'react'
 import { LanguageSwitcher } from '@/components/language-switcher'
@@ -236,9 +236,25 @@ export const HeroHeader = () => {
                 </ul>
               </div>
               <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
-                <div>
+                <div className="flex items-center gap-1">
                   <LanguageSwitcher />
                   <ThemeToggle />
+                  <Button
+                    nativeButton={false}
+                    render={
+                      <a
+                        aria-label="GitHub"
+                        href="https://github.com/tuntun0609/infographic-ai"
+                        rel="noopener noreferrer"
+                        target="_blank"
+                      >
+                        <Github className="h-[1.2rem] w-[1.2rem]" />
+                        <span className="sr-only">GitHub</span>
+                      </a>
+                    }
+                    size="icon"
+                    variant="ghost"
+                  />
                 </div>
                 {renderAuthButtons()}
               </div>
