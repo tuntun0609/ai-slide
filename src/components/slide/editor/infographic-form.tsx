@@ -108,6 +108,16 @@ export function InfographicForm({ data, onChange }: InfographicFormProps) {
     [data.theme, updateField]
   )
 
+  const handleStylizeChange = useCallback(
+    (value: string | null) => {
+      updateField('theme', {
+        ...data.theme,
+        stylize: value || undefined,
+      })
+    },
+    [data.theme, updateField]
+  )
+
   const isRelation = data.template.startsWith('relation-')
   const isRoot = data.dataField === 'root'
   const showValue =
@@ -288,6 +298,31 @@ export function InfographicForm({ data, onChange }: InfographicFormProps) {
                 ))}
               </div>
             )}
+          {/* Stylize */}
+          <div className="flex items-center gap-2">
+            <Label className="shrink-0 text-muted-foreground text-xs">
+              {t('stylize')}
+            </Label>
+            <Select
+              onValueChange={handleStylizeChange}
+              value={data.theme?.stylize ?? ''}
+            >
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder={t('stylizeNone')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">{t('stylizeNone')}</SelectItem>
+                <SelectItem value="rough">{t('stylizeRough')}</SelectItem>
+                <SelectItem value="pattern">{t('stylizePattern')}</SelectItem>
+                <SelectItem value="linear-gradient">
+                  {t('stylizeLinearGradient')}
+                </SelectItem>
+                <SelectItem value="radial-gradient">
+                  {t('stylizeRadialGradient')}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
     </ScrollArea>

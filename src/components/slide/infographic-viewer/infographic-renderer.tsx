@@ -17,6 +17,14 @@ interface InfographicRendererProps {
   containerRef: React.RefObject<HTMLDivElement | null>
 }
 
+// 匹配 DSL 中 theme 段落（含缩进的子行），用于检测风格化变化
+const THEME_SECTION_RE = /^theme[^\n]*(?:\n {2}[^\n]+)*/m
+
+function extractThemeKey(dsl: string): string {
+  const match = dsl.match(THEME_SECTION_RE)
+  return match ? match[0] : ''
+}
+
 export interface InfographicRendererRef {
   getInstance: () => Infographic | null
 }
@@ -28,6 +36,7 @@ export const InfographicRenderer = forwardRef<
   const t = useTranslations('slideViewer')
   const infographicInstanceRef = useRef<Infographic | null>(null)
   const previousThemeRef = useRef<'dark' | 'light' | null>(null)
+  const previousThemeKeyRef = useRef<string>('')
   const { resolvedTheme } = useTheme()
 
   // 暴露 Infographic 实例给父组件
@@ -42,6 +51,7 @@ export const InfographicRenderer = forwardRef<
       infographicInstanceRef.current = null
     }
     previousThemeRef.current = null
+    previousThemeKeyRef.current = ''
   }, [])
 
   // 渲染或更新 Infographic
@@ -52,6 +62,15 @@ export const InfographicRenderer = forwardRef<
       }
 
       try {
+        const themeKey = extractThemeKey(contentToRender)
+        const themeKeyChanged = themeKey !== previousThemeKeyRef.current
+
+        // 如果风格化配置变化（stylize/mode/palette），需要销毁重建实例
+        if (infographicInstanceRef.current && themeKeyChanged) {
+          infographicInstanceRef.current.destroy()
+          infographicInstanceRef.current = null
+        }
+
         // 如果实例已存在，使用 update 方法更新
         if (infographicInstanceRef.current) {
           // 如果主题变化了，先更新主题，再更新内容
@@ -63,6 +82,7 @@ export const InfographicRenderer = forwardRef<
           // 更新内容（字符串会被解析为 DSL）
           infographicInstanceRef.current.update(contentToRender)
           previousThemeRef.current = options.theme
+          previousThemeKeyRef.current = themeKey
           return
         }
 
@@ -82,6 +102,7 @@ export const InfographicRenderer = forwardRef<
         // 保存实例引用和主题
         infographicInstanceRef.current = infographic
         previousThemeRef.current = options.theme
+        previousThemeKeyRef.current = themeKey
       } catch (error) {
         console.error('Failed to render infographic:', error)
         // 显示错误信息

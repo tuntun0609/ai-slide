@@ -178,6 +178,12 @@
     "light": "Light",
     "dark": "Dark",
     "colorPalette": "配色: #fff,#000 或 antv",
+    "stylize": "风格",
+    "stylizeNone": "默认",
+    "stylizeRough": "手绘",
+    "stylizePattern": "纹理填充",
+    "stylizeLinearGradient": "线性渐变",
+    "stylizeRadialGradient": "径向渐变",
     "rootNodeLabel": "根节点标签",
     "rootNodeDesc": "根节点描述",
     "templateGroup": {

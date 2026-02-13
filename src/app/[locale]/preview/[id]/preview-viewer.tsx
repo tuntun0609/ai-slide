@@ -29,6 +29,14 @@ interface PreviewViewerProps {
   infographics: InfographicType[]
 }
 
+// 匹配 DSL 中 theme 段落（含缩进的子行），用于检测风格化变化
+const THEME_SECTION_RE = /^theme[^\n]*(?:\n {2}[^\n]+)*/m
+
+function extractThemeKey(dsl: string): string {
+  const match = dsl.match(THEME_SECTION_RE)
+  return match ? match[0] : ''
+}
+
 export function PreviewViewer({ title, infographics }: PreviewViewerProps) {
   const t = useTranslations('slideViewer')
   const tPreview = useTranslations('preview')
@@ -39,6 +47,7 @@ export function PreviewViewer({ title, infographics }: PreviewViewerProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const infographicInstanceRef = useRef<Infographic | null>(null)
   const previousThemeRef = useRef<'dark' | 'light' | null>(null)
+  const previousThemeKeyRef = useRef<string>('')
 
   const currentInfographic = infographics[currentIndex]
   const totalCount = infographics.length
@@ -54,6 +63,7 @@ export function PreviewViewer({ title, infographics }: PreviewViewerProps) {
       infographicInstanceRef.current = null
     }
     previousThemeRef.current = null
+    previousThemeKeyRef.current = ''
   }, [])
 
   const renderInfographic = useCallback(
@@ -63,12 +73,22 @@ export function PreviewViewer({ title, infographics }: PreviewViewerProps) {
       }
 
       try {
+        const themeKey = extractThemeKey(content)
+        const themeKeyChanged = themeKey !== previousThemeKeyRef.current
+
+        // 如果风格化配置变化（stylize/mode/palette），需要销毁重建实例
+        if (infographicInstanceRef.current && themeKeyChanged) {
+          infographicInstanceRef.current.destroy()
+          infographicInstanceRef.current = null
+        }
+
         if (infographicInstanceRef.current) {
           if (previousThemeRef.current !== options.theme) {
             infographicInstanceRef.current.update({ theme: options.theme })
           }
           infographicInstanceRef.current.update(content)
           previousThemeRef.current = options.theme
+          previousThemeKeyRef.current = themeKey
           return
         }
 
@@ -82,6 +102,7 @@ export function PreviewViewer({ title, infographics }: PreviewViewerProps) {
         infographic.render(content)
         infographicInstanceRef.current = infographic
         previousThemeRef.current = options.theme
+        previousThemeKeyRef.current = themeKey
       } catch (error) {
         console.error('Failed to render infographic:', error)
       }

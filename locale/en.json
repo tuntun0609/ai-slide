@@ -178,6 +178,12 @@
     "light": "Light",
     "dark": "Dark",
     "colorPalette": "Color Palette: #fff,#000 or antv",
+    "stylize": "Style",
+    "stylizeNone": "Default",
+    "stylizeRough": "Hand-drawn",
+    "stylizePattern": "Pattern",
+    "stylizeLinearGradient": "Linear Gradient",
+    "stylizeRadialGradient": "Radial Gradient",
     "rootNodeLabel": "Root Node Label",
     "rootNodeDesc": "Root Node Description",
     "templateGroup": {
