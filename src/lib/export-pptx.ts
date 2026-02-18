@@ -1,13 +1,11 @@
 import { Infographic as InfographicRenderer } from '@antv/infographic'
+import jsPDF from 'jspdf'
 import PptxGenJS from 'pptxgenjs'
 import type { Infographic } from '@/lib/slide-schema'
 
 // PPT slide dimensions in inches (LAYOUT_WIDE = 16:9)
 const SLIDE_W = 13.333
 const SLIDE_H = 7.5
-const RENDER_DPR = 3
-// Max pixel dimension for the longer side when exporting PNG
-const MAX_RENDER_PX = 2560
 // Regex for splitting viewBox values (whitespace and commas)
 const VIEW_BOX_SPLIT_REGEX = /[\s,]+/
 
@@ -27,7 +25,8 @@ export async function exportToPptx(
       continue
     }
 
-    const result = await renderInfographicToPng(infographic.content)
+    // 高分辨率：最长边 2560px，DPR 3
+    const result = await renderInfographicToPng(infographic.content, 2560, 3)
     if (!result) {
       continue
     }
@@ -41,11 +40,9 @@ export async function exportToPptx(
     let w: number
     let h: number
     if (imgAspect > slideAspect) {
-      // 图片更宽，以 slide 宽度为限
       w = SLIDE_W
       h = SLIDE_W / imgAspect
     } else {
-      // 图片更高，以 slide 高度为限
       h = SLIDE_H
       w = SLIDE_H * imgAspect
     }
@@ -60,6 +57,75 @@ export async function exportToPptx(
   await pptx.writeFile({ fileName: `${title}.pptx` })
 }
 
+// PDF page dimensions in mm (16:9 landscape)
+const PDF_W = 297
+const PDF_H = 167.0625
+// PDF 渲染参数：最长边 2560px，DPR=1，兼顾清晰度与文件体积
+const PDF_MAX_PX = 2560
+const PDF_DPR = 2
+
+/**
+ * 将信息图数组导出为 PDF 文件
+ */
+export async function exportToPdf(
+  infographics: Infographic[],
+  title: string
+): Promise<void> {
+  const pdf = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: [PDF_W, PDF_H],
+  })
+
+  let firstPage = true
+
+  for (const infographic of infographics) {
+    if (!infographic.content || infographic.content.trim() === '') {
+      continue
+    }
+
+    // 低分辨率：最长边 1748px，DPR 1，显著减小文件体积
+    const result = await renderInfographicToPng(
+      infographic.content,
+      PDF_MAX_PX,
+      PDF_DPR
+    )
+    if (!result) {
+      continue
+    }
+
+    const { dataUrl, width: imgW, height: imgH } = result
+
+    if (!firstPage) {
+      pdf.addPage([PDF_W, PDF_H], 'landscape')
+    }
+    firstPage = false
+
+    // 计算图片在页面上的位置和大小，保持原始宽高比并居中
+    const imgAspect = imgW / imgH
+    const pageAspect = PDF_W / PDF_H
+
+    let w: number
+    let h: number
+    if (imgAspect > pageAspect) {
+      w = PDF_W
+      h = PDF_W / imgAspect
+    } else {
+      h = PDF_H
+      w = PDF_H * imgAspect
+    }
+
+    const x = (PDF_W - w) / 2
+    const y = (PDF_H - h) / 2
+
+    pdf.addImage(dataUrl, 'PNG', x, y, w, h)
+  }
+
+  if (!firstPage) {
+    pdf.save(`${title}.pdf`)
+  }
+}
+
 interface RenderResult {
   dataUrl: string
   width: number
@@ -68,9 +134,13 @@ interface RenderResult {
 
 /**
  * 渲染单个 infographic 为 PNG data URL，保持原始宽高比
+ * @param maxPx  渲染画布最长边像素数
+ * @param dpr    设备像素比（影响 toDataURL 输出分辨率）
  */
 async function renderInfographicToPng(
-  content: string
+  content: string,
+  maxPx: number,
+  dpr: number
 ): Promise<RenderResult | null> {
   // 第一步：用临时容器渲染，获取 SVG 的 viewBox 以得到自然宽高比
   const probeContainer = document.createElement('div')
@@ -123,11 +193,11 @@ async function renderInfographicToPng(
   let renderW: number
   let renderH: number
   if (aspect >= 1) {
-    renderW = MAX_RENDER_PX
-    renderH = Math.round(MAX_RENDER_PX / aspect)
+    renderW = maxPx
+    renderH = Math.round(maxPx / aspect)
   } else {
-    renderH = MAX_RENDER_PX
-    renderW = Math.round(MAX_RENDER_PX * aspect)
+    renderH = maxPx
+    renderW = Math.round(maxPx * aspect)
   }
 
   // 第三步：用正确尺寸渲染并导出 PNG
@@ -147,7 +217,7 @@ async function renderInfographicToPng(
     instance.render(content)
     await new Promise((resolve) => setTimeout(resolve, 500))
 
-    const dataUrl = await instance.toDataURL({ type: 'png', dpr: RENDER_DPR })
+    const dataUrl = await instance.toDataURL({ type: 'png', dpr })
     return { dataUrl, width: renderW, height: renderH }
   } catch (error) {
     console.error('Failed to render infographic to PNG:', error)

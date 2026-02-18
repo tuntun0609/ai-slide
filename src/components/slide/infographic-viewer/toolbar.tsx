@@ -6,6 +6,7 @@ import {
   Copy,
   Download,
   FileImage,
+  FileText,
   FileType,
   Maximize2,
   Plus,
@@ -36,6 +37,7 @@ interface ToolbarProps {
   onDownload: (format: 'svg' | 'png') => void
   onCopyAsPng: () => void
   onExportPptx: () => void
+  onExportPdf: () => void
   onFullscreen: () => void
   onJumpTo: (index: number) => void
 }
@@ -53,6 +55,7 @@ export function Toolbar({
   onDownload,
   onCopyAsPng,
   onExportPptx,
+  onExportPdf,
   onFullscreen,
   onJumpTo,
 }: ToolbarProps) {
@@ -205,6 +208,13 @@ export function Toolbar({
               >
                 <Presentation className="mr-2 h-4 w-4" />
                 <span>{t('exportAsPpt')}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={totalCount === 0}
+                onClick={onExportPdf}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                <span>{t('exportAsPdf')}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

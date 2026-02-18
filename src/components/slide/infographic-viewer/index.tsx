@@ -5,7 +5,7 @@ import { nanoid } from 'nanoid'
 import { useTranslations } from 'next-intl'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { exportToPptx } from '@/lib/export-pptx'
+import { exportToPdf, exportToPptx } from '@/lib/export-pptx'
 import {
   addInfographicAtom,
   deleteInfographicAtom,
@@ -239,6 +239,19 @@ export function InfographicViewer({ slideId }: InfographicViewerProps) {
     })
   }, [slide, t])
 
+  // 导出为 PDF
+  const handleExportPdf = useCallback(() => {
+    if (!slide || slide.infographics.length === 0) {
+      return
+    }
+
+    toast.promise(exportToPdf(slide.infographics, slide.title || 'slide'), {
+      loading: t('exportPdfLoading'),
+      success: t('exportPdfSuccess'),
+      error: t('exportPdfFailed'),
+    })
+  }, [slide, t])
+
   const handleFullscreen = useCallback(() => {
     if (!wrapperRef.current) {
       return
@@ -305,6 +318,7 @@ export function InfographicViewer({ slideId }: InfographicViewerProps) {
         onCopyAsPng={handleCopyAsPng}
         onDeleteSlide={handleDeleteSlide}
         onDownload={handleDownload}
+        onExportPdf={handleExportPdf}
         onExportPptx={handleExportPptx}
         onFullscreen={handleFullscreen}
         onJumpTo={handleJumpTo}
