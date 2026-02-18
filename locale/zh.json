@@ -275,6 +275,14 @@
       "description": "目前还没有已发布的信息图可供探索，请稍后再来！"
     }
   },
+  "icons": {
+    "title": "图标搜索",
+    "description": "搜索语义图标，点击复制 URL。",
+    "searchPlaceholder": "输入关键词搜索图标...",
+    "emptyHint": "输入关键词开始搜索图标",
+    "noResults": "未找到图标",
+    "copied": "已复制图标链接"
+  },
   "preview": {
     "title": "预览",
     "slideNotFound": "幻灯片未找到或未发布",

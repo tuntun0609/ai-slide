@@ -275,6 +275,14 @@
       "description": "There are no published infographics to explore yet. Check back later!"
     }
   },
+  "icons": {
+    "title": "Icon Search",
+    "description": "Search semantic icons, click to copy URL.",
+    "searchPlaceholder": "Enter keywords to search icons...",
+    "emptyHint": "Enter keywords to start searching icons",
+    "noResults": "No icons found",
+    "copied": "Icon URL copied"
+  },
   "preview": {
     "title": "Preview",
     "slideNotFound": "Slide not found or not published",

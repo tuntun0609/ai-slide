@@ -1,4 +1,4 @@
-import { Compass, FolderRoot } from 'lucide-react'
+import { Compass, FolderRoot, Search } from 'lucide-react'
 import type * as React from 'react'
 import { LogoIcon } from '@/components/logo'
 import {
@@ -64,6 +64,14 @@ export function SlideSidebar({
                   <SidebarMenuButton className="py-2.5">
                     <Compass className="size-4 text-muted-foreground" />
                     <span className="font-medium text-sm">Explore More</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <Link href="/slide/icons">
+                  <SidebarMenuButton className="py-2.5">
+                    <Search className="size-4 text-muted-foreground" />
+                    <span className="font-medium text-sm">Icons</span>
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
