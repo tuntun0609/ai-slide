@@ -8,7 +8,6 @@ import { CodeIcon, FormInputIcon } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { InfographicForm } from '@/components/slide/editor/infographic-form'
 import { Button } from '@/components/ui/button'
 import type { InfographicData } from '@/lib/infographic-parser'
 import {
@@ -21,6 +20,7 @@ import {
   selectedInfographicIdAtom,
   updateInfographicContentAtom,
 } from '@/store/slide-store'
+import { InfographicForm } from './infographic-form'
 
 type ViewMode = 'form' | 'code'
 
