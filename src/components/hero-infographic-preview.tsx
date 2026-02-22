@@ -145,7 +145,7 @@ export function HeroInfographicPreview() {
       } catch (error) {
         console.error('Failed to render hero infographic:', error)
       }
-    }, 0)
+    }, 100)
 
     return () => {
       clearTimeout(timer)
