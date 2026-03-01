@@ -1,5 +1,6 @@
 'use client'
 
+import { Github } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { LogoIcon } from './logo'
@@ -20,6 +21,15 @@ export function Footer() {
             <p className="max-w-xs text-center text-muted-foreground text-sm leading-relaxed md:text-left">
               {t('description')}
             </p>
+            <a
+              aria-label="GitHub"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+              href="https://github.com/tuntun0609/infographic-ai"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <Github className="size-5" />
+            </a>
           </div>
 
           {/* Nav Links */}
